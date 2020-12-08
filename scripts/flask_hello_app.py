@@ -17,8 +17,8 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://ali:123@localhost:5432/exa
 #using sqlalchamy as the medium to interact with our db
 db = SQLAlchemy(app)
 
-class Person(db.Model): #Person(db.Model): inherits from db.Model. By inheriting, we map from our classes to tables via SQLAlchamy ORM.
-    __tablename__ = 'person' #This is optional to control table name. sqlalchemy will automatically grap your class name and name your table the same with lowercase!
+class Persons(db.Model): #Person(db.Model): inherits from db.Model. By inheriting, we map from our classes to tables via SQLAlchamy ORM.
+    __tablename__ = 'persons' #This is optional to control table name. sqlalchemy will automatically grap your class name and name your table the same with lowercase!
     id = db.Column(db.Integer, primary_key= True) # This is to bind your attribute (id) to a cloumn in the db and specify the column specs (primary, data type ... etc)
     name = db.Column(db.String(), nullable= False)
 
@@ -32,7 +32,7 @@ db.create_all() # This looks at the above table/s and create them in our db in c
 
 @app.route('/')
 def index():
-    person= Person.query.first() # This gives the first record in the table person
+    person= Persons.query.first() # This gives the first record in the table person
     return 'Hello '+ person.name
     #return 'Hello World!'
 
