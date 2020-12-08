@@ -1,0 +1,86 @@
+login to postgresql through terminal:
+=====================================
+1- Method1:
+$psql example postgres
+
+2- Method2:
+$ sudo -u postgres psql
+
+
+
+Create a user in posgres db and make it as superuser for db named 'example'
+===========================================================================
+1- I already have a user named 'ali' in ubuntu. Therefore, I'll go ahead and create same user in my postgres db env.
+
+2- Login to postgres db as a superuser: 
+$ sudo -u postgres psql
+
+3- creat a user called 'ali' with pw '123'
+postgres=# CREATE USER ali WITH PASSWORD '123';
+
+4- Give user ali all privileges on db called 'example'
+postgres=# GRANT ALL PRIVILEGES ON DATABASE example to ali
+
+5- quit: 
+postgres=# 
+
+6- Test user ali:
+$ psql -d example -U ali
+
+The above worked perfectly for me so far!
+
+
+
+Some good commands to know for psql:
+=====================================
+Once you're in postgres db through terminal you can type the following commands:
+
+\l : list db names in your db env
+\c <dbname>: connect to the db with name dbname. If only used \c will inform you which db you're connected to.
+\dt: list of table names in the db that you're curreenly connected to.
+\d: describes tables schema
+\q: quit psql
+\?: get help with list of commands in psql
+
+
+
+
+
+Check if postgres is running:
+=============================
+Review: https://mydbanotebook.org/post/troubleshooting-01/
+>> pgrep -u postgres -fa -- -D
+
+24843 /usr/lib/postgresql/12/bin/postgres -D /var/lib/postgresql/12/main -c config_file=/etc/postgresql/12/main/postgresql.conf
+
+Note: to know the port listening:
+1- need to know $PGDATA. This is the part after -D option above: [/var/lib/postgresql/12/main]
+2- execute this command:
+>> sed -n 4p <$PGDATA>/postmaster.pid
+This in my machine translated to:
+>> sed -n 4p var/lib/postgresql/12/main/postmaster.pid
+You can read the above file only if you're root so:
+>> sudo -i
+>> cd var/lib/postgresql/12/main/
+>> sed -n 4p postmaster.pid
+This returned: 5432
+
+- Get your cluster info:
+>> pg_lsclusters
+this returns:
+
+Ver Cluster Port Status Owner    Data directory              Log file
+12  main    5432 online postgres /var/lib/postgresql/12/main /var/log/postgresql/postgresql-12-main.log
+
+
+- start cluster
+>> pg_lsclusters 12 main start
+
+
+
+Quicker way to know postgres is running:
+>> ls -lA /var/run/postgresql
+ This will show the port as well!
+
+
+
