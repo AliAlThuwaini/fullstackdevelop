@@ -1,0 +1,310 @@
+login to postgresql through terminal:
+=====================================
+1- Method1: to login to db named 'example' with a user 'postgres'. I think: this only work if your current user in unix is 'postgres' becuase it uses peer authentication
+
+$psql example postgres
+
+
+2- Method2: This is always work
+$ sudo -u postgres psql
+
+
+3- Method3: Unix user= ali and you have same username in postgres: connect to db named 'example' with user ali
+
+$ psql example
+
+
+
+
+Create a user in posgres db and make it as superuser for db named 'example'
+===========================================================================
+1- I already have a user named 'ali' in ubuntu. Therefore, I'll go ahead and create same user in my postgres db env.
+
+2- Login to postgres db as a superuser: 
+$ sudo -u postgres psql
+
+3- creat a user called 'ali' with pw '123'
+postgres=# CREATE USER ali WITH PASSWORD '123';
+
+4- Give user ali all privileges on db called 'example'
+postgres=# GRANT ALL PRIVILEGES ON DATABASE example to ali;
+
+5- quit: 
+postgres=# \q
+
+6- Test user ali:
+$ psql -d example -U ali
+
+The above worked perfectly for me so far!
+
+
+
+Some good commands to know for psql:
+=====================================
+Once you're in postgres db through terminal you can type the following commands:
+
+\l : list db names in your db env
+\c <dbname>: connect to the db with name dbname. If only used \c will inform you which db you're connected to.
+\dt: list of table names in the db that you're curreenly connected to.
+\d: describes tables schema
+\q: quit psql
+\?: get help with list of commands in psql
+\conninfo: gives information about current user and database you're connected to
+select current_user; this return username that you're connected to psql by.
+
+
+
+
+
+Check if postgres is running:
+=============================
+Review: https://mydbanotebook.org/post/troubleshooting-01/
+>> pgrep -u postgres -fa -- -D
+
+24843 /usr/lib/postgresql/12/bin/postgres -D /var/lib/postgresql/12/main -c config_file=/etc/postgresql/12/main/postgresql.conf
+
+Note: to know the port listening:
+1- need to know $PGDATA. This is the part after -D option above: [/var/lib/postgresql/12/main]
+2- execute this command:
+>> sed -n 4p <$PGDATA>/postmaster.pid
+This in my machine translated to:
+>> sed -n 4p var/lib/postgresql/12/main/postmaster.pid
+You can read the above file only if you're root so:
+>> sudo -i
+>> cd var/lib/postgresql/12/main/
+>> sed -n 4p postmaster.pid
+This returned: 5432
+
+- Get your cluster info:
+>> pg_lsclusters
+this returns:
+
+Ver Cluster Port Status Owner    Data directory              Log file
+12  main    5432 online postgres /var/lib/postgresql/12/main /var/log/postgresql/postgresql-12-main.log
+
+
+- start cluster
+>> pg_lsclusters 12 main start
+
+
+
+Quicker way to know postgres is running:
+>> ls -lA /var/run/postgresql
+ This will show the port as well!
+
+
+
+
+ Insert some records in a table:
+ ================================
+table name = users
+
+example=> insert into users (name) values ('Bob'),('Ali'), ('Amy'), ('Sam'), ('Ali')      -> This insert multiple records in table users.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+SQLAlchemy API for postgres 
+===========================
+
+Select all records in Persons class:
+>>> Persons.query.all())
+
+
+Select the first record in the table referenced in class Persons:
+>>> Persons.query.first()
+
+
+Filter:
+>>> Persons.query.filter_by(name= 'Amy')
+This returns a query object. In order to see what is inside that object, we use .all()
+>>> Persons.query.filter_by(name= 'Amy').all()
+
+
+Select the first record of the filtered results
+>>> person = Persons.query.filter_by(name= 'Amy').first()
+to get the name in this record:
+>>>> person.name
+
+
+we can query the result in a variable and then select whatever from that variable
+>>> result = Persons.query.filter_by(name= 'Amy').all()
+>>> result[0]
+>>> result[0].id
+
+
+We can use session.add to start adding new objects to the DATABASE
+>>> person = Persons(name= 'Bob 2')
+>>> db.session.add(person)
+>>> db.session.commit()
+>>> Persons.query.all()
+
+We can add multiple objects at the same time! see the following:
+>>> person1 = Persons(name = 'New person 1')
+>>> person2 = Persons(name = 'New person 2')
+>>> db.session.add_all([person1, person2])
+>>> db.session.commit()
+
+
+Model.query
+------------
+query is the source of SELECT statement of any Model we define. -> In our case,Persons was the Model.
+
+>>> Persons.query.filter_by(name= 'Amy')  -> select from model Persons and filter records by name='Amy'
+
+>>> Persons.query.all()     -> select all records in model Persons
+
+>>> Persons.query.count()   -> count number of records in the model
+
+>>> Persons.query.filter(Persons.name== 'Amy')    -> Similar to filter_by, but instead, you specify attributes on a given Model. It is more flexible than using filter_by itself, and is especially useful when querying from a joined table where you want to filter by attributes that span across multiple models. need to add .all() in order to get the object contents
+
+>>> Persons.query.filter(Persons.name== 'Amy', Team.name== 'Udacity')     -> multiple filters
+
+>>> Persons.query.get(1)    -> get record by primary key
+
+>>> Persons.query.limit(1).all()    -> this equals:    select * from persons limit 1;
+
+>>> Product.query.filter_by(category== 'Misc').delete()      -> fitch all records with category= 'Misc' from Model Product and delete them!
+
+
+
+query object offers the ability to do metho chaining. Look at the below examples:
+
+>>> Persons.query.filter(Persons.name== 'Amy').filter(Team.name== 'Udacity').first()
+>>> Driver.query.join('vehicles').filter_by(driver_id== 3).all()    -> vehicles is the db table name (the model name could be Vehicle). This join both tables and then filter the joined result by driver_id. Not sure what to join on yet!
+
+
+Two ways to access query of a model:
+1- through the model itself:
+Model.query     -> Persons.query
+
+2- through db.session:
+db.session.query(Modle)         -> db.session.query(Persons)
+>>> db.session.query(Persons).join(Team)
+
+
+db.session.query() can also accept chaining just like Model.query
+>>> db.session.query(Persons).filter(Person.name=='Amy').filter(Team=='Udacity').first()
+
+Using LIKE
+----------
+>>> User.query.filter(User.name.like('%A%')).all()       -> returns all records with name includes letter 'A'
+>>> User.query.filter(User.name.like('%A%')).limit(5).all()      -> returns first 5 records with name includes letter 'A'
+>>> User.query.filter(User.name.ilike('%A%')).limit(5).all()    -> returns irst 5 records with name includes letter 'A' or 'a'. It is case-insenstive.
+>>> User.query.filter(User.name=='Ali').count()         -> select count(*) from users where name = 'Ali'
+
+
+Undo:
+-------
+>>> db.session.rollback()       -> it works as long as the changes are not yet flushed. flushing is the translating actions into SQL command statements for the engine. Flushing stage is prior to commit stage where changes persist to the databse.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Postgres Errors and troubleshooting
+====================================
+
+Problems I faced with Postgress when tried to connect from psycopg2:
+
+1- psycopg2.OperationalError: could not connect to server: No such file or directory
+	is the server running locally and accepting
+        connections on Unix domain socket "/tmp/.s.PGSQL.5432"?
+        
+   Solution: After further digging, found out that the socket in my installation is avialable in "/var/run/postgresql/.s.PGSQL.5432" path while psycopg2 is looking for the socket in 
+   "/tmp/.s.PGSQL.5432"
+   Therefore, I accessed the following file:
+	"/etc/postgresql/12/main/postgres.conf" and commented 
+	unix_socket_directories = '/var/run/postgresql' then added the following
+	unix_socket_directories = '/tmp/'
+This resolved the problem
+
+
+2- when executing: >>psycopg.connect('dbname=example user=postgress') received the following error: psycopg2.OperationalError: FATAL:  Peer authentication failed for user "postgres"
+
+Solution: 
+1- execute the following command to access the authentication configuration file:
+$ sudo subl /etc/postgresql/12/main/pg_hba.conf 
+
+2- the above will open the config file in sublime. change the following two lines:
+host    all             all             127.0.0.1/32            md5
+host    all             all             127.0.0.1/32            md5
+
+to be:
+
+host    all             all             127.0.0.1/32            trust
+host    all             all             127.0.0.1/32            trust
+
+3- Restart postgres services:
+$ sudo systemctl restart postgresql
+To make sure it is restarted: execute the following command and see the 'active' time
+$ sudo systemctl status postgresql.service
+
+
+The above resolved the peer auth issue. BTW, trust means all connections will be accepted. This was a temporary solution as I want to concentrate more on postgres learning rather than auth issues!!
+
+
+
+ls -lA /var/run/postgresql
+

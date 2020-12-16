@@ -1,0 +1,19 @@
+<html>
+    <head>
+        <title> Todo App </title>
+
+    </head>
+    <boday>
+        <ul>
+            <!--Ali: Flask uses Jinja as template engine. Below for loop is Jinja's code 
+            Note: 'data' in the below for loop is a variable we defined in render_template function inside index function in app.py
+            -->
+            {% for d in data %}
+            <li>{{ d.description }}</li>
+            {%endfor%}
+        </ul>
+    </boday>
+
+
+
+</html>
