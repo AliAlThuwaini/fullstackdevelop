@@ -4,6 +4,12 @@
 
     </head>
     <boday>
+        <!--Creating a form elemnt that allows us to create todo item-->
+        <form method="POST" action="/todos/create"> <!--action is set to a url, then we setup the same post listener in out controller: @app.route('/todos/create', methods= ['POST'])-->
+            <input type="text" name="description" />
+            <input type='submit' value="Create" /> 
+
+        </form>
         <ul>
             <!--Ali: Flask uses Jinja as template engine. Below for loop is Jinja's code 
             Note: 'data' in the below for loop is a variable we defined in render_template function inside index function in app.py

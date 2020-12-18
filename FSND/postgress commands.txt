@@ -5,7 +5,7 @@ login to postgresql through terminal:
 $psql example postgres
 
 
-2- Method2: This is always work
+2- Method2: This is always work. Note: I noticed this doesn't work in VSCode command! but, in Ubuntu terminal it works perfectly.
 $ sudo -u postgres psql
 
 
@@ -100,6 +100,23 @@ Quicker way to know postgres is running:
 table name = users
 
 example=> insert into users (name) values ('Bob'),('Ali'), ('Amy'), ('Sam'), ('Ali')      -> This insert multiple records in table users.
+
+
+Create a database and grant privileges to different user:
+====================
+1- in Linux, login with the same user that you have it in postgres db (in order to pass the peer authentication)
+
+1- connect to postgres with superuser (postgres). Reason, normal user doesn't have a privilege to create db.
+$ sudo -u postgres psql
+
+2- Grant privileges to user ali, so that in future you use it as it is same user in Linux (to pass peer authentication). 
+postgres=# GRANT ALL PRIVILEGES ON DATABASE todoapp to ali;
+
+- Note: if you corrupt your database 'todos' and you want to recreate is as fresh:
+postgres=# dropdb todoapp && createdb todoapp;
+If the above did not work with you, try this:
+postgres=# dropdb todoapp && create database todoapp;
+
 
 
 

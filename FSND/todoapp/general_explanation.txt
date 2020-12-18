@@ -1,0 +1,13 @@
+Steps to create a todo item directly from the webpage:
+======================================================
+1- in the view (index.html) 
+    1- created a form with a text input in order to enter the todo name in it.
+    2- set the action= to a certain route. In our case: action='/todos/create'
+- in the controller (app.py):
+    1- create a listner and set it to listen to the same route in the action value in step# 1.2 above
+    2- create a method controller to:
+        1- grap the form input (name of the new todo item)
+        2- prepare it to be inserted to the db by making that input as an object of Todo class
+        3- db.session.add to add it to the pending stage just before actually push it to db
+        4- commit to do the actual change in the db: db.session.commit()
+        5- Finally, redirect to our index route to get a fresh grap of todos table records and display it to customer.

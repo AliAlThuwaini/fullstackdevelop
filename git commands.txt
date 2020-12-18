@@ -1,0 +1,405 @@
+Git version:
+>> git --version
+
+- Set global configurations:
+Name: 'iamali' -> 'I'm Ali'
+>> git config --global user.name iamali
+email:
+>> git config --global user.email ali.knowmore@gmail.com
+
+to know what the name/email registered is:
+>> git config user.name
+>> git config user.email
+
+
+
+Information:
+
+- Git repository or 'repo' is essentially a project that git is managing for you. You can as many repos each one for one project. repos can be local or remote. we'll explore local for now.
+
+- The repository is where .get file exists. if it exists in a root folder which has both files and folders, git will track changes for all. Howerver, if .get (hidden directory) available in a subfolder, it will only track the changes in that subfolder.
+
+- COMMITS: commit works as save points. whenver you reach to a good level while working on some programming file for example (logical save point), you can commit changes so that as if you save changes up to this point and you can roll back to anyh commit point in the commit history. It works like this:
+	- Modified Stage: You madify for example two files but you're not sure if these to be commited now or vene commited.
+	- Staging Stage: It is like preparation for commit. Add whatever files you change to staging are in order to be commited.
+	- committed stage: All files in the staging stage will be added the commit when we create one.
+	
+- When we create a repository we'll be having one branch 'master'. We can make additional branches of the master and then merge them back later.
+
+
+Creating Repositories:
+======================
+- Using cmder, navigate to the root folder where you want to track all of its contents utilizing git:
+- execute: 
+>> git init
+
+- vscode is great at controlling changes. 
+On the command line level (master) word will be shown next to the folder that is git repository --> in our case it is : G:\Ext_Disk_SharedFolder\Data Science Projects\Git Tutorials\git_one (master) 
+On the explorer side: the folder 'git_one' will be shown as green color because it is a repository and all the files/folders it contains will also be green which means that they're being tracked by git. In addition, whatevern changes you made will be registered under 'source control' tab
+
+
+Staging Files:
+======================
+- Modified Stage: changed files but not commited (shown as green in the vscode explorer pane)	
+
+- In order to show which files have been changed and which files are in the staging area (we're in git_one folder now):
+>> git status
+This shows index.html as red and not added to staging
+
+- To add any file to staging stage use 'add' then name of the file: (we're in git_one folder now)
+>> git add index.html
+To show the status now:
+>> git status
+This will show index.html as green which means added and to be committed.
+
+- To remove the file index.html from staging area:
+>> git rm --cached index.html
+
+- If we've multiple files in our repo that we've changed and we want to add them all to staging:
+>> git add .
+
+- Purpose of having staging area instead of directly commiting files:
+	1- Extra layer of security: To review our changes before adding them to commit. We need to commit only at logical points when we add certian feature or doing major change.
+	2- To control the commits. Suppose I'm working on two files for two website and I want to put them in seperate commits, I add the first file to staging area and commit it, then add the second file to staging area and commit it.
+	3- I can also check the differences between the files already in the branch and the files in the staging area using the following command:
+	>> git diff --staged
+
+Making Commits:
+======================
+- To commit the files in the staging area, we use commit command with -m option to put a descriptive message about what the commit is (has to be between double qoutes. single qoutes will raise error):
+>> git commit -m "added index and styles files"
+
+- Once you commit files, their color will be turned to while in vscode explorer. If you change any of these files again, their color will be turned to orange (it may take a while for vscode to refresh colors and generally to refresh source control)
+
+- After changing the file (index.html), we do same process:
+	- adding it to staging area:
+	>> git add index.html 
+	- commit it (This is just for illustration, else we don't commit small changes - in our case only changed the title)
+	>> git commit -m 'added index title'
+
+- Note: if we changed a line in the code: git doesn't recognize a change instead, it says 1 line deleted and 1 line inserted; while actually it is the same line but just edited.
+
+- Now, we have commit history in our 'master' branch. To see this history:
+>> git log
+
+- To show a condensed version of the changes (commit history):
+>> git log --oneline
+
+
+Undoing  stuff:
+======================
+- There are  3 ways to undo things:
+	1- checkout commit: Very safe
+	2- Revert commit: still safe but not as quite as checkout commit.
+	3- Reset commit: Not safe. It potentially ruin your repository.
+
+- checkout commit: goes back in time to any if your saved points. when you use this method and retrieve a previous commit, it is read only, so it will bring the code to your editor but will not change the saved point.
+
+- revert commit: it retrives a previous commit but the effect is as if it deleted it (it actually doesnt delete it)
+
+- Reset commit: when you go back to third from last commit, the latest two commits will be deleted. So, it parmanently deletes everything done after the commit that you retreive.
+
+- Senario: We've 5 commits in our repositor:
+3c61bdf added heading to index file
+6137833 added new feature
+29499c1 changed body font size
+e4f121f added index title
+b9b746b added index and styles files
+
+	- Your boss came and said: I want to see the code in ealier stage (when you added a title -> e4f121f)
+	>> git checkout e4f121f
+
+	This will show you the code at that commit but will not affect commit history and everything is still preserved. It will detach from the current branch (master) and go back to that commit (titled as the change id you retrieved: e4f121f hence you're no more in your original branch which is master)
+	To go back (reattached) to master branch:
+	>> git checkout master
+	if you do
+	>> git log --oneline
+	you'll find all your commits histroy still intact.
+
+	- Your boss: Remove feature.js as we don't need it anymore in the project. However, you're afraid that you may need it in the future and hence, it is better to stay in the commit history although it is to be removed from the project (has the deletion effect)
+	To remove certain feature (commit) from your project, while actually you preserve it in your commit history we use revert.
+	>> git revert 6137833
+	This will give you a screen to enter a message, we'll leave it intact so just press:
+	shift :wq
+	This change removes feature.js from the project. However, when you check your history, you'll see that everything is still preserved and another commit is created for removal. So, you still will be able to go to a revious commit including bringing back that file if you'd like to.
+	>> git log --oneline
+	efe5e1b Revert "added new feature"
+	3c61bdf added heading to index file
+	6137833 added new feature
+	29499c1 changed body font size
+	e4f121f added index title
+	b9b746b added index and styles files
+
+
+	- Your boss said, the last 4 commits, we don't need them anymore. 
+	To remove them we can do:
+	>> git reset e4f121f
+	Effect: Anything after e4f121f commit will not be preserved in commit history. However, the physical files and code are still exists in your directory. Therefore, You may want to put them all in one change and re commit them if you'd like.
+	However, if you want to go back in time and also remove any physical files and code after e4f121f change:
+	>> git reset e4f121f --hard
+	You need to be very carful because there is no way to get back your files/codes once they're deleted.
+
+
+Creating Branches:
+======================
+- Each repo created comes with master branch. If we did not create any additional branch, then, when we commit, we commit to master branch only.
+
+- Normally, master branch will include your stable code that is ready to be released or published. So, we don't try new features on master branch. Instead, we create new branch to experiment on. Then, if we like this feature, we can merge it with master branch. the new branch is like an isolated environment where we can try all keind of changes on.
+
+- Right now I've one branch -> master with two commits:
+ab80e45 added index title
+b9b746b added index and styles files
+
+To add a new branch called feature-1:
+>> git branch feature-1
+when you add a new branch in that physical directory, it will take the status of the master branch as its initial status. so, if the master has two commits, it will have same two commits (even same commit ids).
+
+To list your branches - local and remote:
+>> git branch -a
+
+To switch to a branch (feature-1) you need to checkout it:
+>> git checkout feature-1
+
+As you switched, now you can add whatever to your physical directory (in our case, we added feature-1.js file) and then add these to the staging area, then commit them in the new branch feature-1 that you're on. 
+>> git add .
+>> git commit -m "added new feature file"
+This feature is only in feature-1 branch. if you switch to master branch, the new file feature-1.js will disappear from the physical folder.
+>> git checkout master
+
+- To delete feature-1 branch:
+	1- Go to master branch:
+	>> git branch master
+	2- Delete feature-1 branch:
+		- if the branch is already merged use:
+		>> git branch -d feature-1
+		- if it is not merged but still you want to delete it:
+		>> git branch -D feature-1
+	3- To make sure it is deleted, list available branches:
+	>> git branch -a
+
+- To create a branch feature-a and checkout to it in one step:
+>> git checkout -b feature-a
+
+- To work on two features [feature-a & feature-b] together (each with its own branch). Let's suppose each feature is a js file with same name (feature-a.js, feature-b.js)
+	1- create feature-a branch and switch from master branch to it, then create the file feature-a.js physically, then add it to staging are and then commit it in feature-a branch.
+	>> git checkout -b feature-a
+	create feature-a.js
+	>> git add .
+	>> git commit -m "added feature a file"
+
+	2- checkout to master branch
+	>> git checkout master
+
+	3- create feature-b branch and switch from master branch to it, then create the file feature-b.js physically, then add it to staging are and then commit it in feature-b branch. Note: when you switch to branch feature-b, feature-a.js file will disappear physically.
+	>> git checkout -b feature-b
+	create feature-b.js
+	>> git add .
+	>> git commit -m "added feature b file"
+
+	4- Now, we've two branches (branch-a, branch-b) both active but each with a different feature to work on. Both are not affecting the master branch. If we checkout to master both feature files (feature-a.js, feature-b.js) disappear.
+
+Merging Branches:
+======================
+
+- building on the above tutorial, we've 3 branches now: 
+>> git branch -a
+  
+  feature-a
+  feature-b
+* master
+
+we've two new features (feature-a.js, feature-b.js) in branches feature-a, feature-b respectively. Let's assume that each feature was worked on by different person. Now, we're happy with features  and we want to merge them back with master branch.
+
+- Merging feature-b into master branch:
+	1- we've to be in the branch we want to merge the feature into (master):
+	>> git checkout master
+
+	2- merge feature-a branch into master:
+	>> git merge feature-a
+	Now, feature-a.js appears in master branch
+	Note: git utilized Fast-forward strategy here because there is no difference in the master branch from the moment feature-a branch created till merged.
+
+	3- merge feature-b branch into master:
+	>> git merge feature-b
+	Now, feature-b.js appears in master branch.
+	Note: git utilized 'recursive' strategy for merge because master branch has changed (feature-a.js was added from step#2 above) from the time feature-b was created till merged back with master.
+
+	4- Now, master branch has both features in it.
+
+- The above scenario is the happy scenario but this is not always the case. Let's walk through below scenario:
+	- A new feature to be added called feature-c which a new branch is to be created for it:
+	>> git checkout -b feature-c
+
+	- Someone else came and changed something in master branch (particulary in styles.css, suppose added the following code: margin: 20px;) and commited that change. below code to memic:
+	>> git checkout master
+	do necessary changes to styles.css
+	>> git add .
+	>> git commit -m "added margin to body selector"
+
+	- Let's work on feature-c:
+	>> git checkout feature-c
+
+	Let's assume that I'll be working on styles.css file as well and I'm not aware of the other guy who commited changes in the master branch, of course his changes won't be shown in my branch. I'm adding new codes like (padding: 30px;) Now, I'm happy and will merge back to master after commiting it in my branch:
+	>> git add .
+	>> git commit -m "added padding"
+	>> git checkout master
+	>> git merge feature-c
+
+	This will raise a conflict exception, because styles.css is changed since last time we branched from master. Therefore, if git merged out change, it will actually delete all other changes done by other people.
+	So, we need to fix the conflict first.
+
+	To fix the merge manually (supposingly that we will keep all changes), we open styles.css file and just remove the headers that git has placed there to signal what others change is and what my change is. Then add it to staging area and commit it. Note: we need not adding a message to commit as we're just accepting changes.
+
+	steps:
+	Do manual change in styles.css
+	>> git add .
+	>> git commit
+	it will give you the editor. Just quit the editor without doing anything. to quit:
+	:wq
+	Now, you'll receive a message telling branch feature-c is merged
+	
+	To make sure branch feature-c is merged:
+	>> git log --oneline
+
+	When you come across such situation, you need to decide what the final change in (e.g. styles.cc) will look like with the others who made the other changes and then commit the last product after decision.
+
+
+Introduction to GITHUB:
+========================
+
+- Github is nothing but a facility to store remote Repositories. You can access them from anywhere.
+
+- I can work with github in two ways:
+	1- I have already a project in my computer and I decided to put the code on github, maybe to collaborate with others worldwide.
+
+	2- I don't have a project locally, I want to create a github repo and then clone it to my pc. This is a better option if you don't already have a project.
+
+- Steps to sync our git-one repository to github:
+	1- sign in to your github account
+	2- create a new repository there, let's call it git-one just to sync with our local repo name
+	3- copy repo url
+	4- Now, we want to push our local repository to the newly created remote one. We need to make sure that nothing left to commit and working tree is clean:
+	>> git checkout master
+	>> git status
+	5- push local master branch to the remote repo: 
+	>> git push https://github.com/AliAlThuwaini/git-one.git master
+
+	Note: we can push all branches as we'll see later.
+
+- Note: instead of typing the url of remote repository each time we want to push to, we can set an alias (in our case below, the alias we set is "origin" which is very opular on github and hence we choose to use the same)
+>> git remote add origin https://github.com/AliAlThuwaini/git-one.git
+
+- Make some changes locally and push them to github:
+	1- do a change: example, add a header to index.html
+	2- commit to the local repo
+	>> git add .
+	>> git commit -m "added h1"
+	3- push the changes to github:
+	>> git push origin master
+
+
+- Let's do the other way now. We'll create a repository in github and clone it to pc
+	- create a repo called test-portfolio in github
+	- in cmd, navigate to the location where you want this repository to be cloned to.
+	- clone it:
+	>> git clone https://github.com/AliAlThuwaini/test-portfolio.git
+
+- Now, let's do changes in order to push them back to gihub:
+	- do some changes (create index.html file in the local test-portfolio repository)
+	- add it and commit it:
+	>> git add .
+	>> git commit om "added index file"
+	- Note: as this repo cloned from github, it has already setup the alias as 'origin'. The following code shows that:
+	>> git remote -v
+	- push the changes from local master repo to the remote repo origin on github:
+	>> git push origin master
+
+
+Collaborating on GITHUB:
+========================
+
+- Now, we have a project inside a remote repo in github. We want to collaborate as a team. Me as a team member when I want to work, first, pull the latest master branch from github to my pc, to make sure that I got the latest version of the released project: (make sure you're in master branch when executing this so that remote master will be merged with local master)
+>> git pull origin master
+
+- Suppose I work on a new feature (adding index.html), I'll checkout a new branch for that in order to keep the master branch status intact.
+>> git checkout -b index-html
+
+- Suppose you make changes in index.html and will commit it now.
+>> git add .
+>> git commit -m "added index html feature"
+
+- As we're collaborating, I don't want to merge this new change to the local master. Because if I do and then push it to the remote, it will merge with remote master branch which will make other collaborators angry. We need to agree on what to go to remote master. Therefore, I'll push this branch index-html to the remote repo so others can review the code and then decide to merge it to the master or not.
+>> git push origin index-html
+
+- Now if you go to github repo, you'll see it saying that changes are pushed. to see the change click on "compare & pull request"
+this will show you the last change and will give you text box to write explicitly what you've done in this change so that your manager or collborators will see it. Once you're done, you create a pull request, which means a request you initiate to merge this change to the origin master.
+to do that, press on "Create pull request" button under the text file mentioned above.
+
+- Once pull request done, all reviewers will be notified. You can also assign a specific reviewer to review your code under "Reviewers' link.
+
+- If reviewed, and comments were placed, you may push the 'Comment' button to display the message/comment under 'conversation' tab (you can also open the file and comment in it line by line [this is done under 'Files changed' tab]) then/else push 'Merge pull request' button and confirm it 'Confirm merge' to merge this branch with origin master repo.
+
+- Once merge is done successfuly, you can safely delete the branch index-html by pushing the 'Delete branch' button.
+
+- Let's assume I'll put an image in this project. So, I need to start working on my local on it again. 
+	1- Before working, I need to pull the origin master to local master. Therefore, make sure you're on local master then execute pull:
+	>> git checkout master
+	>> git pull origin master
+	
+	2- Create new branch for the image feature:
+	>> git checkout -b img-update
+
+	3- Do the change (in our case, we created a folder called assets and put some images inside)
+
+	4- add and commit the change:
+	>> git add .
+	>> git commit -m "added images"
+
+	5- push the change to remote repo:
+	>> git push origin img-update
+
+	6- go to github repo and push 'Creat pull request' button
+
+	7- Then you can see the changes under 'Files changed' tab
+
+	8- you can go back to 'converstion' tab and add and put any comment you like (this comment will be shown in the conversation and nothing to do with origin as a core project)
+
+	9- Suppose you receive a note saying that an image is missing and you need to add it. you need to do the following:
+		9.1- While locally on img-update repo, pull the master again from origin repo to make sure that you accomediate all changes others have made.
+		>> git pull origin master
+		
+		9.2- place the missing picture in the image folder called 'assets'
+		
+		9.3- stage and commit this last change locally to img-update:
+		>> git add .
+		>> git commit -m "added last img"
+
+		9.4- push the changes again to origin repo:
+		>> git push origin -img-update
+
+		9.5- Go to the remote repo and create a pull request from this recent change as it is shown there by pushing 'Compare & pull request' button.
+
+		9.6- Your manager may review the change comment on it in the discussion panel and lastely if happy, merge this with origin master by pushing 'Merge pull request' button and confirm it 'Confirm merge' to merge this branch with origin master repo.
+
+
+Forking & Contributin on GITHUB:
+=================================
+- Forking a repo on Github to contribute to a kind of open source project.
+
+- We do forking because we don't have direct access to the project that we'll contribute to.
+
+- Forking: it is a process of copying a repository from someone's account to your account
+
+- Forking Contribution Process: 
+	1- sign in to your account and from there go to the repository you want to fork and click on 'Fork' button. This will copy the whole repo to your account
+
+	2- Now you can clone it to your desktop and do the necessary changes there, stage and commit them and then push it back to the remote repo in your account. Remember: when you clone a repo, it is automatically given alias 'origin'
+
+	3- Create a pull request by pushine on 'New pull request' in that repo residing in your account. This will do the follwing:
+		1- Take you to the original repo that you forked (residing on the original account)
+		2- Tell you if the changes you made can be merged. 
+		3- Enables 'Create pull request' button. when you push it, it enables you to leave comments into conversation board as well. Purpose is to merge your changes to the origianl repo. However, unlike in your account, you don't have the ability to merge the changes.
+
+	4- Now, the original account owner can see your request under his repo 'pull requests' tab. He can navigate to your files and see the changes you made. If happy, he can leave you a comment in the ocnversation board and can merge your changes by pushing 'Merge pull request' button and then pushing 'confirm merge' button.
+
+- Every open source project might have different contribution guidlines. Some of them have kind of file usually called contributing.md. Better to read through these before you make contribution.
