@@ -1,0 +1,49 @@
+Steps to create a todo item directly from the webpage:
+======================================================
+1- in the view (index.html) 
+    1- created a form with a text input in order to enter the todo name in it.
+    2- set the action= to a certain route. In our case: action='/todos/create'
+- in the controller (app.py):
+    1- create a listner and set it to listen to the same route in the action value in step# 1.2 above
+    2- create a method controller to:
+        1- grap the form input (name of the new todo item)
+        2- prepare it to be inserted to the db by making that input as an object of Todo class
+        3- db.session.add to add it to the pending stage just before actually push it to db
+        4- commit to do the actual change in the db: db.session.commit()
+        5- Finally, redirect to our index route to get a fresh grap of todos table records and display it to customer.
+
+
+Using Ajax to send data to flask:
+=================================
+- Reminder, there are 3 ways to get data into flask:
+    1- URL query parameters: Example:
+        URL parameters: /foo?field1=valu1
+        grap input in flask: value1 = request.args.get('field1')
+    2- Form input: Example:
+        flask grapping the input: 
+        username = request.form.get('username')
+        password = request.form.get('password')
+    3- Json data type:
+        request: application/json
+        flask grapping: 
+        data_string = request.data
+        data_dictionary = json.loads(data_string)
+
+- Two ways to send data to flask:
+    - synchronously: like the html form
+    - asynchronously: data sent from client to server and then back to client without client ever need to be refreshed
+
+- Methods to send Ajax request:
+    - XMLHttpRequest
+    - Fetch: more modern implementation that former one.
+
+- Why to use Ajax for creating a todo item? Because it is asynchronous and wont need a page refresh to get the item included
+
+- Steps to use Ajax to create the todo item:
+    1- Send POST request over
+    2- Amend your controler function in the app.py (create_todo()) to receive the request as json and send the response back to the client as json object as well. No redirect anymore!
+    3- Get the reponse back (first .then functioon )
+    4- Parse response as json (second .then function)
+    5- Use that json response to append that item as a child (thrid .then function)
+
+        

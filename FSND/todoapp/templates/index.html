@@ -1,23 +1,70 @@
 <html>
     <head>
         <title> Todo App </title>
+        <style>
+            .hidden{
+                display: none;
+            }
+        </style>
 
     </head>
     <boday>
         <!--Creating a form elemnt that allows us to create todo item-->
-        <form method="POST" action="/todos/create"> <!--action is set to a url, then we setup the same post listener in out controller: @app.route('/todos/create', methods= ['POST'])-->
+        <form id='form'> 
             <input type="text" name="description" />
             <input type='submit' value="Create" /> 
 
         </form>
-        <ul>
-            <!--Ali: Flask uses Jinja as template engine. Below for loop is Jinja's code 
+        <!--set error message and make it by default hidden.. check the style above-->
+        <div id='error' class= 'hidden'>Something went wrong!</div>
+        <ul id='todos'>
+            <!--Jinja as template engine. Below for loop is Jinja's code 
             Note: 'data' in the below for loop is a variable we defined in render_template function inside index function in app.py
             -->
             {% for d in data %}
             <li>{{ d.description }}</li>
             {%endfor%}
         </ul>
+        <script>
+            //This submits the form to the server
+            document.getElementById('form').onsubmit = function(e){
+                e.preventDefault(); //prevents the default behaviour which is refreshing the page
+                fetch('/todos/create',{
+                    method: 'POST',
+                    body: JSON.stringify({
+                        'description': document.getElementById('description').value
+                    }),
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                })
+                //Get the response from the server
+                .then(function(response){
+                    return response.json();
+                })
+                //paser that response as json
+                .then(function(jsonResponse){
+                    console.log(jsonResponse);
+                    //Now amend that object to our list. Previously, server tookk care of this, but now the client through Ajax will!
+
+                    //Define li item:
+                    const liItem = document.createElement('LI');
+                    // set the inner html of this li tag to be the description that comes from the response
+                    liItem.innerHTML = jsonResponse['description'];
+                    // append a child of Li item. Notice that our unordered list has an id='todos' 
+                    document.getElementById('todos').appendChild(liItem);
+
+                    //notice, we included the error in the response but with class 'hidden' which means the error message will be alaways hidden if no error occured
+                    document.getElementById('error').className= 'hidden'; 
+
+                })
+                //in case the above did not work, catch the error. .catch will only trigger if there is an error and in this case it will remove the class name 'hidden' which means the error message will be shown
+                .catch(function() {
+                    document.getElementById('error').className= ''; 
+                }) 
+            }
+        </script>
+        <!-- Ali: Note Sure why the above is not working! It does not add a new element neither to the todo list nor to the database !!!!!!!!111-->
     </boday>
 
 
