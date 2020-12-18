@@ -53,4 +53,35 @@ Handling errors in the controller function and prevend accedintal db commit when
 
 
 
-        
+DB Migrations:
+===============
+
+$ flask db migrate 	
+Creates a migration script template to fill out
+
+$ flask db upgrade
+apply unapplied migrations
+
+$ flask db downgrade
+rollback applied migrations
+
+in flask, 
+    - Flask-Migrate (flask-migrate) is our migration manager for migrating SQLAlchemy-based database changes. underneath, it uses Alembic library.
+    - Flask-Script (flask-script) let us run migration scripts we defined, from terminal
+    - Read flask-migrate docs here: https://flask-migrate.readthedocs.io/en/latest/
+
+
+Steps to get migrations going:
+    1- Initialize the migration repository structure for storing migrations (This is done only once for the project in order to create the folder migrations and its content in wich migration scripts will be stored)
+        $ flask db init
+    2- Create a migration script (using Flask-Migrate)
+        $ flask db migrate
+        this detects the model changes to be made, and creates a migration file with upgrade and downgrade logic setup
+    3- Run the upgrade command to apply the unapplied migrations:
+        $ flask db upgrade
+    4- Once point#3 is executed, the following will exist:
+        4.1- the changes will exist in our db. In our case a new table called todos was added to todoapp db
+        4.2- Another table named 'alembic_version' is also added to todoapp. Purpose: it stores the versions of our db. this is used internally by flask-migrate and we should not touch
+    3-(Manually) Run the migration script (using Flask-Script)
+
+

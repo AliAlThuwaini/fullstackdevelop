@@ -1,3 +1,8 @@
+**************************************
+Postgress Commands
+**************************************
+
+
 login to postgresql through terminal:
 =====================================
 1- Method1: to login to db named 'example' with a user 'postgres'. I think: this only work if your current user in unix is 'postgres' becuase it uses peer authentication
@@ -94,16 +99,22 @@ Quicker way to know postgres is running:
 
 
 
+ Restart postgres:
+ ==================
+$ pg_ctl -D /usr/local/var/postgres stop
+$ pg_ctl -D /usr/local/var/postgres start
 
- Insert some records in a table:
- ================================
+
+
+Insert some records in a table:
+================================
 table name = users
 
 example=> insert into users (name) values ('Bob'),('Ali'), ('Amy'), ('Sam'), ('Ali')      -> This insert multiple records in table users.
 
 
 Create a database and grant privileges to different user:
-====================
+==========================================================
 1- in Linux, login with the same user that you have it in postgres db (in order to pass the peer authentication)
 
 1- connect to postgres with superuser (postgres). Reason, normal user doesn't have a privilege to create db.
@@ -118,45 +129,50 @@ If the above did not work with you, try this:
 postgres=# dropdb todoapp && create database todoapp;
 
 
+drop a database:
+=================
+If your db name is todoapp:
+$ dropdb todoapp
+
+Note: the current linux user must be the owner of that db in order to drop it. for me, my user ali was not thee owner. Therefore, I did the following steps:
+
+1- log in to psql as the owner of that db:
+        $ sudo -u postgres psql
+2- change the owner to user ali:
+        postgres=# alter database todoapp owner to ali;
+3- quit psql
+4- run the drop command from the Terminal:
+        $ dropdb todoapp
+5- if required, login to psql and make sure it is dropped:
+        postgres=# \l
+
+
+create a database:
+==================
+if you want to create a db called todoapp:
+$ createdb todoapp
+
+
+Make a user ali as superuser:
+===============================
+In order for user ali to execute createdb command, he needs to be a superuser. To make ali as a superuser:
+1- connect as postgres:
+        $ sudo -u postgres psql
+2- alter ali to be superuser:
+        postgres=# alter user ali with superuser;
+3- Make sure ali is a superuser:
+postgres=# select usesuper, * from pg_user
+if usersuper value is (t) for ali, means true and he is a superuser.
 
 
 
 
 
 
+**************************************
+SQLAlchemy API for postgres Commands
+**************************************
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-SQLAlchemy API for postgres 
-===========================
 
 Select all records in Persons class:
 >>> Persons.query.all())
@@ -256,32 +272,10 @@ Undo:
 
 
 
+*********************************************
+Postgres troublshooting on OS level Commands
+*********************************************
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-Postgres Errors and troubleshooting
-====================================
 
 Problems I faced with Postgress when tried to connect from psycopg2:
 
@@ -324,4 +318,51 @@ The above resolved the peer auth issue. BTW, trust means all connections will be
 
 
 ls -lA /var/run/postgresql
+
+
+
+
+
+
+
+
+
+
+**************************************
+flask Commands
+**************************************
+
+
+DB Migrations:
+===============
+
+$ flask db migrate 	
+Creates a migration script template to fill out
+
+
+$ flask db upgrade
+apply unapplied migrations
+
+
+$ flask db downgrade
+rollback applied migrations
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

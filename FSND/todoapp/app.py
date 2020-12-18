@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, jsonify, abort
 from flask_sqlalchemy import SQLAlchemy
 #importing sys module to display error if they exist
 import sys
+from flask_migrate import Migrate
 
 
 app = Flask(__name__)
@@ -10,18 +11,22 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SQLALCHEMY_DATABASE_URI'] = 'postgres://ali:123@localhost:5432/todoapp'
 db = SQLAlchemy(app)
 
+#Define our migrate. it has to link between our flask app and our sqlalchemy instance
+migrate = Migrate(app, db)
 
 
 class Todo(db.Model):
     __tablename__ = 'todos'
     id = db.Column(db.Integer, primary_key = True)
     description = db.Column(db.String(), nullable= False)
+    completed = db.Column(db.Boolean, nullable=False, default=False)
     
     # define dunder repr method
     def __repr__(self):
         return f'<Todo: {self.id}, desc: {self.description}>'
 
-db.create_all()
+# As we're using flask-migrate to sync our models, we don't need to use db.create_all() anymore.
+#db.create_all()
 
 @app.route('/')
 def index():
