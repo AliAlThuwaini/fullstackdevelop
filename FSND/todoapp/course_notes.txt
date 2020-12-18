@@ -46,4 +46,11 @@ Using Ajax to send data to flask:
     4- Parse response as json (second .then function)
     5- Use that json response to append that item as a child (thrid .then function)
 
+
+Handling errors in the controller function and prevend accedintal db commit when connection closed
+=====================================================================================================
+(try except finally) block was added to the create_todo() function in the route: '/todos/create'. Reason: if something went wrong and the app closed the connection to db, there is an implicit commit here and hence, we may accidently commit something undesirable to db. In order to prevent that, we added the (try except finally) to prevent such mistakes.
+
+
+
         

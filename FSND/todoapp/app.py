@@ -1,7 +1,7 @@
-from flask import Flask, render_template, request, jsonify
-from flask.helpers import url_for
+from flask import Flask, render_template, request, jsonify, abort
 from flask_sqlalchemy import SQLAlchemy
-from werkzeug.utils import redirect
+#importing sys module to display error if they exist
+import sys
 
 
 app = Flask(__name__)
@@ -30,18 +30,34 @@ def index():
 
 @app.route('/todos/create', methods= ['POST'])
 def create_todo():
+    error= False
+    body= {}
     #fetch json body from the request. Notice, in index.html (body: JSON.stringify) was a dictionary
     description =  request.get_json()['description']
 
-    #Now use the above description variable to create a new todo record in our database
-    #step1: use Todo class to create a column description from our variable description
-    todo = Todo(description= description)
-    #step2: add that column to our database - putting it in the pending stage
-    db.session.add(todo)
-    #step3: commit that change in order to take effect in the database
-    db.session.commit()
-    
-    # Return useful json object to the index.html view 
-    return jsonify({
-        'description': todo.description
-    })
+    #implement try except blocks in order to aviod implicit commit when closing the connection if something went wrong!
+    try:
+        #Now use the above description variable to create a new todo record in our database
+        #step1: use Todo class to create a column description from our variable description
+        todo = Todo(description= description)
+        #step2: add that column to our database - putting it in the pending stage
+        db.session.add(todo)
+        #step3: commit that change in order to take effect in the database
+        db.session.commit()
+
+        #body var was created so that we don't access todo.descritiopn in the return statement after closing the connection. If you try to return it after closing connection it raises an error because it is not bound anymore!
+        body['description'] = todo.description
+    except:
+        error = True
+        db.session.rollback()
+        print(sys.exc_info())
+
+    finally:
+        db.session.close()
+
+    if not error:           
+        # Return useful json object to the index.html view 
+        return jsonify(body)
+    else:
+        abort(400)
+

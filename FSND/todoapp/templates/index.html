@@ -8,10 +8,11 @@
         </style>
 
     </head>
-    <boday>
+    <body>
         <!--Creating a form elemnt that allows us to create todo item-->
         <form id='form'> 
-            <input type="text" name="description" />
+            <!--id is used to identify the HTML element through the Document Object Model (via JavaScript or styled with CSS). id is expected to be unique within the page. name corresponds to the form element and identifies what is posted back to the server-->
+            <input type="text" id="description" name="description" />
             <input type='submit' value="Create" /> 
 
         </form>
@@ -48,7 +49,7 @@
                     //Now amend that object to our list. Previously, server tookk care of this, but now the client through Ajax will!
 
                     //Define li item:
-                    const liItem = document.createElement('LI');
+                    const liItem = document.createElement('li');
                     // set the inner html of this li tag to be the description that comes from the response
                     liItem.innerHTML = jsonResponse['description'];
                     // append a child of Li item. Notice that our unordered list has an id='todos' 
@@ -64,8 +65,7 @@
                 }) 
             }
         </script>
-        <!-- Ali: Note Sure why the above is not working! It does not add a new element neither to the todo list nor to the database !!!!!!!!111-->
-    </boday>
+    </body>
 
 
 
