@@ -85,3 +85,28 @@ Steps to get migrations going:
     3-(Manually) Run the migration script (using Flask-Script)
 
 
+
+
+Update item in DB:
+===================
+
+Using sql:
+----------
+UPDATE table_name
+SET column1 = value1, column2 = value2, ...
+WHERE condition;
+
+Using SQLAlchemy:
+-----------------
+user = User.query.get(some_id)
+user.name = 'Some new name'
+db.session.commit()
+
+
+
+Jinja templates doc, review statements:
+http://jinja.pocoo.org/docs/2.10/templates/#if
+
+
+
+

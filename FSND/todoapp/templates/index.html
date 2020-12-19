@@ -5,6 +5,12 @@
             .hidden{
                 display: none;
             }
+            ul {
+                /*to remove the bullet-in points in the list item, so that only checkboxes remain*/
+                list-style: none;
+                padding: 0;
+                margin: 0;
+            }
         </style>
 
     </head>
@@ -19,14 +25,38 @@
         <!--set error message and make it by default hidden.. check the style above-->
         <div id='error' class= 'hidden'>Something went wrong!</div>
         <ul id='todos'>
-            <!--Jinja as template engine. Below for loop is Jinja's code 
-            Note: 'data' in the below for loop is a variable we defined in render_template function inside index function in app.py
-            -->
+            <!-- add a checkbox and set it to either checked or not based on its status whither completed or not (by eventually reading its status from todos.completed column in our db) -->
             {% for d in data %}
-            <li>{{ d.description }}</li>
+            <li><input class= 'check-completed' data-id="{{ d.id }}" type="checkbox" {% if d.completed %} checked {% endif %} /> {{ d.description }} </li>
             {%endfor%}
         </ul>
         <script>
+            //This loops over the checkboxes in the item list above and update the status based on user interaction with them
+            const checkboxes = document.querySelectorAll('.check-completed');
+            for (let i=0; i< checkboxes.length; i++) {
+                const checkbox = checkboxes[i];
+                checkbox.onchange = function(e){
+                    console.log('event', e);
+                    const newCompleted = e.target.checked;
+                    const todoId = e.target.dataset['id'];
+                    fetch('/todos/' + todoId + '/set-completed', {
+                        method: 'POST',
+                        body: JSON.stringify({
+                            'completed': newCompleted
+                        }),
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    })
+                    .then (function(){
+                        document.getElementById('error').className= 'hidden';
+                    })
+                    .catch(function (){
+                        document.getElementById('error').className= '';
+                    })
+                }
+            }
+
             //This submits the form to the server
             document.getElementById('form').onsubmit = function(e){
                 e.preventDefault(); //prevents the default behaviour which is refreshing the page
