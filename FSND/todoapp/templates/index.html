@@ -5,11 +5,28 @@
             .hidden{
                 display: none;
             }
+
             ul {
                 /*to remove the bullet-in points in the list item, so that only checkboxes remain*/
                 list-style: none;
                 padding: 0;
                 margin: 0;
+
+                width: 300px;
+            }
+
+            li {
+                clear: both;
+            }
+
+            li button {
+                -webkit-appearance: none;
+                border: none;
+                outline: none;
+                color: red;
+                float: right;
+                cursor: pointer;    /*to make the button like something you can point to*/
+                font-size: 20 px;
             }
         </style>
 
@@ -27,10 +44,32 @@
         <ul id='todos'>
             <!-- add a checkbox and set it to either checked or not based on its status whither completed or not (by eventually reading its status from todos.completed column in our db) -->
             {% for d in data %}
-            <li><input class= 'check-completed' data-id="{{ d.id }}" type="checkbox" {% if d.completed %} checked {% endif %} /> {{ d.description }} </li>
+            <li><input class= 'check-completed' data-id="{{ d.id }}" type="checkbox" {% if d.completed %} checked {% endif %} /> 
+                {{ d.description }} 
+                <!-- Adding a cross button to delete item-->
+                <button class= 'deletion-press' data-id = '{{d.id}}' >&cross;</button>
+            </li>
             {%endfor%}
         </ul>
         <script>
+            //This loops over the cross buttons in the item list above and delete the item based on user interaction [click on the item]
+            const deleteButtons = document.querySelectorAll('.deletion-press');
+            for (let i=0; i<deleteButtons.length; i++){
+                const deleteButton = deleteButtons[i]
+                deleteButton.onclick = function(e){
+                    const todoId = e.target.dataset['id'];
+                    fetch('/todos/' + todoId + '/delete',{
+                        method: 'DELETE'
+                    })
+                    .then (function(){
+                        const item = e.target.parentElement;
+                        item.remove();
+                    })
+                }
+            }
+
+
+
             //This loops over the checkboxes in the item list above and update the status based on user interaction with them
             const checkboxes = document.querySelectorAll('.check-completed');
             for (let i=0; i< checkboxes.length; i++) {

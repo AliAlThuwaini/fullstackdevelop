@@ -109,4 +109,17 @@ http://jinja.pocoo.org/docs/2.10/templates/#if
 
 
 
+Delete item from DB:
+===================
 
+Using sql:
+----------
+DELETE FROM table_name
+WHERE condition;
+
+Using SQLAlchemy ORM:
+----------------------
+todo = Todo.query.get(todo_id) 
+db.session.delete(todo) # or...
+Todo.query.filter_by(id=todo_id).delete()
+db.session.commit()
