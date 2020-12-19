@@ -4,6 +4,7 @@ from flask_sqlalchemy import SQLAlchemy
 #importing sys module to display error if they exist
 import sys
 from flask_migrate import Migrate
+from sqlalchemy.orm import backref
 
 
 app = Flask(__name__)
@@ -16,15 +17,29 @@ db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 
 
+#this is the child model
 class Todo(db.Model):
     __tablename__ = 'todos'
     id = db.Column(db.Integer, primary_key = True)
     description = db.Column(db.String(), nullable= False)
     completed = db.Column(db.Boolean, nullable=False, default=False)
+    # referencing the parent table using foreign key logic
+    list_id = db.Column(db.Integer, db.ForeignKey('todolists.id'), nullable=False) #although by default is it not null becuase it references a primary key, but we wanted to be explicit!
     
     # define dunder repr method
     def __repr__(self):
         return f'<Todo: {self.id}, desc: {self.description}>'
+
+#this is the parent model and it has one-to-many relationship with child model Todo above.
+class TodoList(db.Model):
+    __tablename__ = 'todolists'
+    id = db.Column(db.Integer, primary_key = True)
+    name = db.Column(db.String(), nullable= False)
+    #setting up the relationship with child model Todo:
+    #backref: this is a custom name referencing what the parent name should be! we set: backref= 'list' so that it will be Todo.list to refer to the parent list name
+    todos = db.relationship('Todo', backref= 'list', lazy=True)
+
+
 
 # As we're using flask-migrate to sync our models, we don't need to use db.create_all() anymore.
 #db.create_all()

@@ -123,3 +123,145 @@ todo = Todo.query.get(todo_id)
 db.session.delete(todo) # or...
 Todo.query.filter_by(id=todo_id).delete()
 db.session.commit()
+
+
+
+Database Relationships:
+========================
+- If we've a driver table and a vehicle table, we can see that one driver may own/drive multiple vehicles. 
+- Foregin key is always stored in child table (vehicle table in this case) and resembles the primary key on parent table.
+- in SQLAlchemy, Relationships are offered utilizing: db.relationship interface (where db is SQLAlchemy instance)
+  Note: db.relationship is specified in the parent table:
+
+    class somePARENT(db.Model):
+        id = db.Column(db.Integer, primary_key= True)
+        name = db.Column(db.String(50), nullable= False)
+        children = db.relationship('someChildModelName', backref= 'some_parent')
+
+- we need to mind when to do/load joins. Waiting time becomes noticeable when it is 150 ms (milliseconds). Therefore, we need to be careful not to affect user experience!
+- When calling child1.some_parent, SQLAlchemy determines when we load the parent from the database.
+- Two types of loading child1.some_parent:
+    1- Lazy Loading:
+        load only when needed. i.e. when the child1.some_parent get called, then we load joined data. This is the default in SQLAlchemy. Pros: no initial time waiting. Cons: produces a join SQL every time there is a request for a joined asset.
+    2- Eager Loading:
+        Load all data in one expensive joined operation all at once. Pros: reduces furhter queries as they will ready from existing data. Cons: Long upfront waiting initial waiting time.
+    There are two popular configuration types: lazy=True -> this is the default and no need ot explicitly mention it, lazy='joned'  OR lazy='select' -> eager:
+    children = db.relationship('someChildModelName', backref= 'some_parent', lazy='joined)
+    Check resources on loading types: https://docs.sqlalchemy.org/en/latest/orm/loading_relationships.html
+
+- Beside loading type, there are two useful features:
+
+    class PARENT(db.Model):
+        _tablename__ = 'parents'
+        id = db.Column(db.Integer, primary_key= True)
+        name = db.Column(db.String(50), nullable= False)
+        children = db.relationship('CHILD', backref= 'parent', lazy=True collection_class=list cascade= 'save_update') # OR all, delete_orphan
+
+    1- collection_class: to decide if you want the collection of children to be set as of type list or dict ...etc
+    2- cascade: to select consenquent actions to happen whenever an update or delete occures on parent. Example: delete orphans if a parent is deleted.
+    Review: https://docs.sqlalchemy.org/en/13/orm/relationship_api.html#sqlalchemy.orm.relationship
+
+- Referencing a foreign key with a primary key id:
+    create table vehicles (
+        id integer primary key,
+        make varchar not null,
+        model varchar not null,
+        year integer not null,
+        driver_id references drivers(id)
+    )
+    The above ensures that driver_id will always map to id column in the table drivers. it also ensures driver_id is nonempty.
+
+- using db.foreign_key. Note: db.foreign_key is used in the child table:
+
+    class PARENT(db.Model):
+        _tablename__ = 'parents'
+        id = db.Column(db.Integer, primary_key= True)
+        name = db.Column(db.String(50), nullable= False)
+        ...
+
+    class CHILD(db.Model):
+    _tablename__ = 'childs'
+    id = db.Column(db.Integer, primary_key= True)
+    name = db.Column(db.String(50), nullable= False)
+    parent_id = db.Column(db.Integer, db.ForeignKey('parents.id'), nullable=False)
+
+    Note: parent_id in the CHILD class has same data type of the columns it references in the PARENT class.
+    Review: https://docs.sqlalchemy.org/en/latest/core/constraints.html
+
+- A muture code example to reference a foreign key in table vehicles from parent divers => A driver has many vehicles:
+
+    class Driver(db.Model):
+        __tablename__ = 'drivers'
+        id = db.Column(db.Integer, primary_key= True)
+        name = db.Column(db.String(50), nullable= False)
+        ...
+        vehicles = db.relationship('Vehicle', backref= 'driver', lazy=true)
+
+    class Vehicle(db.Model):
+        __tablename__= 'vehicles'
+        id = db.Column(db.Integer, primary_key= True)
+        make = db.Column(db.String(), nullable= False)
+        ...
+        driver_id = db.Column(db.Integer, db.ForeignKey('drivers.id'), nullable=False)
+
+    Notes: 
+        - backref is a custom name referencing what the parent name should be! In our case: vehicles.driver will retreive the parent driver for that vehicle.
+        - db.ForeignKey takes a special syntax argument: a string containing 'parent_tablename.parent_primary_key'
+
+
+Actual Example from our code and steps to do it:
+=================================================
+- Originally, we have only one model 'Todo' which we store our todo items in. 
+- Later we thought that these items needs to be categorized. Therefore, we thought to have a parent model (we called it TodoList) which holds the category of class of todo items. 
+- So the relationship will be: one category in TodoList is related to many todo items in Todo model.
+
+Here are the steps that we followed to move from 1 table to parent child tables or models:
+    1- Created a parent model:
+
+        class TodoList(db.Model):
+        __tablename__ = 'todolists'
+        id = db.Column(db.Integer, primary_key = True)
+        name = db.Column(db.String(), nullable= False)
+        todos = db.relationship('Todo', backref= 'list', lazy=True)
+
+    2- Amended the child table configure the relationship with the parent table. So, we add the ForeignKey reference:
+
+        class Todo(db.Model):
+        __tablename__ = 'todos'
+        id = db.Column(db.Integer, primary_key = True)
+        description = db.Column(db.String(), nullable= False)
+        completed = db.Column(db.Boolean, nullable=False, default=False)
+        list_id = db.Column(db.Integer, db.ForeignKey('todolists.id'), nullable=False) 
+
+    3- Execute a migration command:
+
+        $ flask db migrate
+        This generated a migration file
+
+    4- run an upgrade command to commit the migrations:
+
+        $ flask db upgrade
+        This result in error saying that Todo.list_id is null to the already existing records in the table todos. and becuase it was set to nullable=False, it refuses to the migration.
+
+    5- Two temporary actions made to allow the migration:
+        5.1- The generated migration file was amended to allow the migration. list_id was set to nullable=True
+        5.2- In model Todo, list_id was configured to nullable=True
+
+    6- run upgrade command it was successful. However, the records in the todos table have their list_id empty which is wrong. Therefore, on db level, the following was done to correct this:
+        6.1- a category called 'Uncategorized' was inserted in the parent table:
+            todoapp=# insert into todolists (name) values ('Uncategorized');
+        6.2- records in the child table were updated to have this category (with id=1) in their list_id:
+            todoapp=# update todos set list_id= 1 where list_id is null;
+
+    7- Now, everything in the db looks good. Therefore, we went back to the child model Todo and made the column list_id as nullable=False
+
+    8- run migration once more to detect this change:
+        $ flask db migrate
+
+    9- Run upgrade to commit this change in the db:
+        $ flask db upgrade
+
+    10- Ensure that this constraint is refelected in the db:
+        todoapp=# \d todos
+        Note that list_id has not null value in the Nullable column now :)
+
