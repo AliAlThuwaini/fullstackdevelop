@@ -301,3 +301,73 @@ Implementing CRUD (Create, Read, Update, Delete) on Lists of Todos (Create Lists
     - Make sure this is all reflected in the db:
         todoapp=# select * from todolists;
         todoapp=# select * from todos;
+
+
+
+Manage many-to-many relationships in SQLAlchemy:
+=================================================
+Let's assume that we have two tables:
+    - Order (parent table)
+    - Product (child table)
+a product can have 1 or many orders, an order can exist in 1 or many orders. In this case, to remedy this we create an association table (intermediate table):
+
+1- Create an association table:
+
+    order_items = db.Table('order_items',
+    db.Column('order_id', db.Integer, db.ForeignKey('order.id'), primary_key=True),
+    db.Column('product_id', db.Integer, db.ForeignKey('product.id'), primary_key=True)
+    )
+
+    Note: class db.Table is a special class to model the relationship between two many-to-many tables
+    association table should link both tables by having their primary_key as ForeignKey in it.
+
+
+2- Parent table:
+
+    class Order(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    status = db.Column(db.String(), nullable=False)
+    products = db.relationship('Product', secondary=order_items,
+    backref=db.backref('orders', lazy=True))
+
+    Note: parent table stores db.relationship, in it we store the secondary table (association table)
+
+
+3- child table:
+
+    class Product(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(), nullable=False)
+
+
+Example of adding these association tables in our db:
+=======================================================
+
+1- Create their classes in app.py
+
+2- run db.create_all() to make sure these are created in our db (you can import db, and the new classes in a python session and call db.create_all() from there instead of hadcode it in the app.py in case you don't want to)
+
+3- Insert a record in parent table:
+    >>> order = Order(status='Ready')
+
+4- Insert a record in the child table:
+    >>> product = Product(name= 'Great widget')
+
+5- Associate them:
+    Either by calling:
+    >>> order.products = [product]
+
+    Or by calling:
+    >>> product.orders = [order]
+
+6- Add and commit them:
+    >>> db.session.add(order)
+    >>> db.session.commit()
+
+Note: if you go on psql and write: select * from order; it will give error because order is a keyword. to fix this:
+select * from "order";
+
+
+
+
+
