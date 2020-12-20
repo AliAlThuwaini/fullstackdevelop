@@ -265,3 +265,39 @@ Here are the steps that we followed to move from 1 table to parent child tables 
         todoapp=# \d todos
         Note that list_id has not null value in the Nullable column now :)
 
+
+
+Implementing CRUD (Create, Read, Update, Delete) on Lists of Todos (Create Lists, Read Lists)
+==============================================================================================
+
+- we created a new route in order to show the list of todos filtered by selected todo list:
+    @app.route('/lists/<list_id>')
+
+- We set the home view to just redirect to the new route. We put list_id=1 in the home just to make sure a list will show when homepage is accessed. 
+
+- We created more todo items and more list items through python:
+    $ python
+    >>> from app import db, TodoList, Todo
+
+    - creating list itmes:
+        >>> list = TodoList(name='Urgent')
+
+    - creating todo items:
+        >>> todo = Todo(description = 'This is really important thing')
+        >>> todo2 =  Todo(description = 'Urgent todo 2')
+        >>> todo3 =  Todo(description = 'Urgent todo 3')
+
+    - associate these todo items with the list we've just created:
+        >>> todo.list = list
+        >>> todo2.list = list
+        >>> todo3.list = list
+    
+    - add them into a session: (adding list, will add all its related childs. this is due to the default cascading option in SQLAlchemy)
+        db.session.add(list)
+
+    - commit the change:
+        db.session.commit()
+
+    - Make sure this is all reflected in the db:
+        todoapp=# select * from todolists;
+        todoapp=# select * from todos;
