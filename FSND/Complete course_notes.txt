@@ -1,0 +1,761 @@
+Steps to create a todo item directly from the webpage:
+======================================================
+1- in the view (index.html) 
+    1- created a form with a text input in order to enter the todo name in it.
+    2- set the action= to a certain route. In our case: action='/todos/create'
+- in the controller (app.py):
+    1- create a listner and set it to listen to the same route in the action value in step# 1.2 above
+    2- create a method controller to:
+        1- grap the form input (name of the new todo item)
+        2- prepare it to be inserted to the db by making that input as an object of Todo class
+        3- db.session.add to add it to the pending stage just before actually push it to db
+        4- commit to do the actual change in the db: db.session.commit()
+        5- Finally, redirect to our index route to get a fresh grap of todos table records and display it to customer.
+
+
+Using Ajax to send data to flask:
+=================================
+- Reminder, there are 3 ways to get data into flask:
+    1- URL query parameters: Example:
+        URL parameters: /foo?field1=valu1
+        grap input in flask: value1 = request.args.get('field1')
+    2- Form input: Example:
+        flask grapping the input: 
+        username = request.form.get('username')
+        password = request.form.get('password')
+    3- Json data type:
+        request: application/json
+        flask grapping: 
+        data_string = request.data
+        data_dictionary = json.loads(data_string)
+
+- Two ways to send data to flask:
+    - synchronously: like the html form
+    - asynchronously: data sent from client to server and then back to client without client ever need to be refreshed
+
+- Methods to send Ajax request:
+    - XMLHttpRequest
+    - Fetch: more modern implementation that former one.
+
+- Why to use Ajax for creating a todo item? Because it is asynchronous and wont need a page refresh to get the item included
+
+- Steps to use Ajax to create the todo item:
+    1- Send POST request over
+    2- Amend your controler function in the app.py (create_todo()) to receive the request as json and send the response back to the client as json object as well. No redirect anymore!
+    3- Get the reponse back (first .then functioon )
+    4- Parse response as json (second .then function)
+    5- Use that json response to append that item as a child (thrid .then function)
+
+
+Handling errors in the controller function and prevend accedintal db commit when connection closed
+=====================================================================================================
+(try except finally) block was added to the create_todo() function in the route: '/todos/create'. Reason: if something went wrong and the app closed the connection to db, there is an implicit commit here and hence, we may accidently commit something undesirable to db. In order to prevent that, we added the (try except finally) to prevent such mistakes.
+
+
+
+DB Migrations:
+===============
+$ flask db init
+This command is done only once (the first time you will do db migrate in your project). it adds a migrations directory in the root of your project. Add the directory and all of its contents to source control.
+
+$ flask db migrate 	
+Creates a migration script template to fill out
+
+$ flask db upgrade
+apply unapplied migrations
+
+$ flask db downgrade
+rollback applied migrations
+
+in flask, 
+    - Flask-Migrate (flask-migrate) is our migration manager for migrating SQLAlchemy-based database changes. underneath, it uses Alembic library.
+    - Flask-Script (flask-script) let us run migration scripts we defined, from terminal
+    - Read flask-migrate docs here: https://flask-migrate.readthedocs.io/en/latest/
+
+
+Steps to get migrations going:
+    1- Initialize the migration repository structure for storing migrations (This is done only once for the project in order to create the folder migrations and its content in wich migration scripts will be stored)
+        $ flask db init
+    2- Create a migration script (using Flask-Migrate)
+        $ flask db migrate
+        this detects the model changes to be made, and creates a migration file with upgrade and downgrade logic setup
+    3- Run the upgrade command to apply the unapplied migrations:
+        $ flask db upgrade
+    4- Once point#3 is executed, the following will exist:
+        4.1- the changes will exist in our db. In our case a new table called todos was added to todoapp db
+        4.2- Another table named 'alembic_version' is also added to todoapp. Purpose: it stores the versions of our db. this is used internally by flask-migrate and we should not touch
+    3-(Manually) Run the migration script (using Flask-Script)
+
+
+
+
+Update item in DB:
+===================
+
+Using sql:
+----------
+UPDATE table_name
+SET column1 = value1, column2 = value2, ...
+WHERE condition;
+
+Using SQLAlchemy:
+-----------------
+user = User.query.get(some_id)
+user.name = 'Some new name'
+db.session.commit()
+
+
+
+Jinja templates doc, review statements:
+http://jinja.pocoo.org/docs/2.10/templates/#if
+
+
+
+Delete item from DB:
+===================
+
+Using sql:
+----------
+DELETE FROM table_name
+WHERE condition;
+
+Using SQLAlchemy ORM:
+----------------------
+todo = Todo.query.get(todo_id) 
+db.session.delete(todo) # or...
+Todo.query.filter_by(id=todo_id).delete()
+db.session.commit()
+
+
+
+Database Relationships:
+========================
+- If we've a driver table and a vehicle table, we can see that one driver may own/drive multiple vehicles. 
+- Foregin key is always stored in child table (vehicle table in this case) and resembles the primary key on parent table.
+- in SQLAlchemy, Relationships are offered utilizing: db.relationship interface (where db is SQLAlchemy instance)
+  Note: db.relationship is specified in the parent table:
+
+    class somePARENT(db.Model):
+        id = db.Column(db.Integer, primary_key= True)
+        name = db.Column(db.String(50), nullable= False)
+        children = db.relationship('someChildModelName', backref= 'some_parent')
+
+- we need to mind when to do/load joins. Waiting time becomes noticeable when it is 150 ms (milliseconds). Therefore, we need to be careful not to affect user experience!
+- When calling child1.some_parent, SQLAlchemy determines when we load the parent from the database.
+- Two types of loading child1.some_parent:
+    1- Lazy Loading:
+        load only when needed. i.e. when the child1.some_parent get called, then we load joined data. This is the default in SQLAlchemy. Pros: no initial time waiting. Cons: produces a join SQL every time there is a request for a joined asset.
+    2- Eager Loading:
+        Load all data in one expensive joined operation all at once. Pros: reduces furhter queries as they will ready from existing data. Cons: Long upfront waiting initial waiting time.
+    There are two popular configuration types: lazy=True -> this is the default and no need ot explicitly mention it, lazy='joned'  OR lazy='select' -> eager:
+    children = db.relationship('someChildModelName', backref= 'some_parent', lazy='joined)
+    Check resources on loading types: https://docs.sqlalchemy.org/en/latest/orm/loading_relationships.html
+
+- Beside loading type, there are two useful features:
+
+    class PARENT(db.Model):
+        _tablename__ = 'parents'
+        id = db.Column(db.Integer, primary_key= True)
+        name = db.Column(db.String(50), nullable= False)
+        children = db.relationship('CHILD', backref= 'parent', lazy=True collection_class=list cascade= 'save_update') # OR all, delete_orphan
+
+    1- collection_class: to decide if you want the collection of children to be set as of type list or dict ...etc
+    2- cascade: to select consenquent actions to happen whenever an update or delete occures on parent. Example: delete orphans if a parent is deleted.
+    Review: https://docs.sqlalchemy.org/en/13/orm/relationship_api.html#sqlalchemy.orm.relationship
+
+- Referencing a foreign key with a primary key id:
+    create table vehicles (
+        id integer primary key,
+        make varchar not null,
+        model varchar not null,
+        year integer not null,
+        driver_id references drivers(id)
+    )
+    The above ensures that driver_id will always map to id column in the table drivers. it also ensures driver_id is nonempty.
+
+- using db.foreign_key. Note: db.foreign_key is used in the child table:
+
+    class PARENT(db.Model):
+        _tablename__ = 'parents'
+        id = db.Column(db.Integer, primary_key= True)
+        name = db.Column(db.String(50), nullable= False)
+        ...
+
+    class CHILD(db.Model):
+    _tablename__ = 'childs'
+    id = db.Column(db.Integer, primary_key= True)
+    name = db.Column(db.String(50), nullable= False)
+    parent_id = db.Column(db.Integer, db.ForeignKey('parents.id'), nullable=False)
+
+    Note: parent_id in the CHILD class has same data type of the columns it references in the PARENT class.
+    Review: https://docs.sqlalchemy.org/en/latest/core/constraints.html
+
+- A muture code example to reference a foreign key in table vehicles from parent divers => A driver has many vehicles:
+
+    class Driver(db.Model):
+        __tablename__ = 'drivers'
+        id = db.Column(db.Integer, primary_key= True)
+        name = db.Column(db.String(50), nullable= False)
+        ...
+        vehicles = db.relationship('Vehicle', backref= 'driver', lazy=true)
+
+    class Vehicle(db.Model):
+        __tablename__= 'vehicles'
+        id = db.Column(db.Integer, primary_key= True)
+        make = db.Column(db.String(), nullable= False)
+        ...
+        driver_id = db.Column(db.Integer, db.ForeignKey('drivers.id'), nullable=False)
+
+    Notes: 
+        - backref is a custom name referencing what the parent name should be! In our case: vehicles.driver will retreive the parent driver for that vehicle.
+        - db.ForeignKey takes a special syntax argument: a string containing 'parent_tablename.parent_primary_key'
+
+
+Actual Example from our code and steps to do it:
+=================================================
+- Originally, we have only one model 'Todo' which we store our todo items in. 
+- Later we thought that these items needs to be categorized. Therefore, we thought to have a parent model (we called it TodoList) which holds the category of class of todo items. 
+- So the relationship will be: one category in TodoList is related to many todo items in Todo model.
+
+Here are the steps that we followed to move from 1 table to parent child tables or models:
+    1- Created a parent model:
+
+        class TodoList(db.Model):
+        __tablename__ = 'todolists'
+        id = db.Column(db.Integer, primary_key = True)
+        name = db.Column(db.String(), nullable= False)
+        todos = db.relationship('Todo', backref= 'list', lazy=True)
+
+    2- Amended the child table configure the relationship with the parent table. So, we add the ForeignKey reference:
+
+        class Todo(db.Model):
+        __tablename__ = 'todos'
+        id = db.Column(db.Integer, primary_key = True)
+        description = db.Column(db.String(), nullable= False)
+        completed = db.Column(db.Boolean, nullable=False, default=False)
+        list_id = db.Column(db.Integer, db.ForeignKey('todolists.id'), nullable=False) 
+
+    3- Execute a migration command:
+
+        $ flask db migrate
+        This generated a migration file
+
+    4- run an upgrade command to commit the migrations:
+
+        $ flask db upgrade
+        This result in error saying that Todo.list_id is null to the already existing records in the table todos. and becuase it was set to nullable=False, it refuses to the migration.
+
+    5- Two temporary actions made to allow the migration:
+        5.1- The generated migration file was amended to allow the migration. list_id was set to nullable=True
+        5.2- In model Todo, list_id was configured to nullable=True
+
+    6- run upgrade command it was successful. However, the records in the todos table have their list_id empty which is wrong. Therefore, on db level, the following was done to correct this:
+        6.1- a category called 'Uncategorized' was inserted in the parent table:
+            todoapp=# insert into todolists (name) values ('Uncategorized');
+        6.2- records in the child table were updated to have this category (with id=1) in their list_id:
+            todoapp=# update todos set list_id= 1 where list_id is null;
+
+    7- Now, everything in the db looks good. Therefore, we went back to the child model Todo and made the column list_id as nullable=False
+
+    8- run migration once more to detect this change:
+        $ flask db migrate
+
+    9- Run upgrade to commit this change in the db:
+        $ flask db upgrade
+
+    10- Ensure that this constraint is refelected in the db:
+        todoapp=# \d todos
+        Note that list_id has not null value in the Nullable column now :)
+
+
+
+Implementing CRUD (Create, Read, Update, Delete) on Lists of Todos (Create Lists, Read Lists)
+==============================================================================================
+
+- we created a new route in order to show the list of todos filtered by selected todo list:
+    @app.route('/lists/<list_id>')
+
+- We set the home view to just redirect to the new route. We put list_id=1 in the home just to make sure a list will show when homepage is accessed. 
+
+- We created more todo items and more list items through python:
+    $ python
+    >>> from app import db, TodoList, Todo
+
+    - creating list itmes:
+        >>> list = TodoList(name='Urgent')
+
+    - creating todo items:
+        >>> todo = Todo(description = 'This is really important thing')
+        >>> todo2 =  Todo(description = 'Urgent todo 2')
+        >>> todo3 =  Todo(description = 'Urgent todo 3')
+
+    - associate these todo items with the list we've just created:
+        >>> todo.list = list
+        >>> todo2.list = list
+        >>> todo3.list = list
+    
+    - add them into a session: (adding list, will add all its related childs. this is due to the default cascading option in SQLAlchemy)
+        db.session.add(list)
+
+    - commit the change:
+        db.session.commit()
+
+    - Make sure this is all reflected in the db:
+        todoapp=# select * from todolists;
+        todoapp=# select * from todos;
+
+
+
+Manage many-to-many relationships in SQLAlchemy:
+=================================================
+Let's assume that we have two tables:
+    - Order (parent table)
+    - Product (child table)
+a product can have 1 or many orders, an order can exist in 1 or many orders. In this case, to remedy this we create an association table (intermediate table):
+
+1- Create an association table:
+
+    order_items = db.Table('order_items',
+    db.Column('order_id', db.Integer, db.ForeignKey('order.id'), primary_key=True),
+    db.Column('product_id', db.Integer, db.ForeignKey('product.id'), primary_key=True)
+    )
+
+    Note: class db.Table is a special class to model the relationship between two many-to-many tables
+    association table should link both tables by having their primary_key as ForeignKey in it.
+
+
+2- Parent table:
+
+    class Order(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    status = db.Column(db.String(), nullable=False)
+    products = db.relationship('Product', secondary=order_items,
+    backref=db.backref('orders', lazy=True))
+
+    Note: parent table stores db.relationship, in it we store the secondary table (association table)
+
+
+3- child table:
+
+    class Product(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(), nullable=False)
+
+
+Example of adding these association tables in our db:
+=======================================================
+
+1- Create their classes in app.py
+
+2- run db.create_all() to make sure these are created in our db (you can import db, and the new classes in a python session and call db.create_all() from there instead of hadcode it in the app.py in case you don't want to)
+
+3- Insert a record in parent table:
+    >>> order = Order(status='Ready')
+
+4- Insert a record in the child table:
+    >>> product = Product(name= 'Great widget')
+
+5- Associate them:
+    Either by calling:
+    >>> order.products = [product]
+
+    Or by calling:
+    >>> product.orders = [order]
+
+6- Add and commit them:
+    >>> db.session.add(order)
+    >>> db.session.commit()
+
+Note: if you go on psql and write: select * from order; it will give error because order is a keyword. to fix this:
+select * from "order";
+
+
+
+
+
+
+
+
+
+===================================================================================================================
+						APIs
+===================================================================================================================
+
+APIs:
+======
+- Allow for interaction with application but, Don't expose application implementation when sharing data
+- control exposure of data. what data to be accessed, and what is the access type: read - read/modify
+- standaradize way of accessing data
+
+URLs to review:
+- google maps: https://developers.google.com/maps/documentation/
+- strip api: https://stripe.com/docs/api?utm_source=zapier.com&utm_medium=referral&utm_campaign=zapier&utm_source=zapier.com&utm_medium=referral&utm_campaign=zapier
+- Facebook api: https://developers.facebook.com/docs
+- instgram api: https://www.instagram.com/developer/
+- Spotify api: https://developer.spotify.com/documentation/web-api/
+
+
+
+HTTP request details:
+=======================
+
+One way to represnt a request:
+------------------------------
+GET http://www.example.com/tasks?term=homework HTTP/2.0
+Accept-Language: en
+
+Method: GET
+Path: http://www.example.com/tasks?term=homework
+HTTP version: HTTP/2.0
+Headers (optional: Accept-Language: en
+Body (optional: Not included
+
+Another way to represnt a request:
+-----------------------------------
+GET /tasks?term=homework HTTP/2.0 Host: http://www.example.com
+
+Method: GET
+Path: /tasks?term=homework
+HTTP version: HTTP/2.0
+Headers (optional): Host: http://www.example.com
+Body (optional): Not included
+
+
+
+Http Request Methods:
+======================
+- GET: Retreive information for the requested resource of the given URI. It reads from backend and send to the frontend. It doesn't add any new information to the database or medifying anything, it only retreive. It doesn't require a body! For every webpage you visit there is at least 1 GET request, or maybe many to execute. Even for google, there are GET requests for every icon and to allow the text in the page.
+
+- POST: Sends data to the server to create a new resource. when you send a POST request, you send some data and that will actually create a new instance or whatever object in the database.
+
+- PUT: Replaces all the representations of the target resource with the request data. Example: you have a post in Instgram and currently it has an image and text for description. you sent a PUT request which doesn't include image, just updated text, when the PUT completes its opration in the DB, it will erase the image because there was none and update the text.
+
+- PATCH: Partially modifies the representations of the target resource with the request data. Take same example we mentioned in PUT, if PATCH request is made, the image will be retained and the text will be updated. Most of the time when we want to update something in the DB, we use PATCH. It is a bit safer as it only modifies what you intended and not to accdently modify what you did not intended to.
+
+- DELETE: Removes all the entire representations of the resource specified by the URI
+
+- OPTIONS: Sends the communication options for the requested resource. it is not frequently used.
+
+
+
+HTTP Responses:
+==================
+
+HTTP/2.0 200 OK
+Date: Fri, 21 June 2019 16:17:18 GMT
+Content-Type: text/html
+Accepted-Ranges: bytes 
+
+HTTP Version:  HTTP/2.0 
+Status Code: 200
+Status Message: OK
+Headers (optional): 	Date: Fri, 21 June 2019 16:17:18 GMT
+			Content-Type: text/html
+			Accepted-Ranges: bytes 
+Body (optional): Not included
+
+Note: for Body: whatever being sent back as a GET response will be sent as part of the Body
+
+
+Status Codes:
+---------------
+5 main categories:
+
+1- 1xx: informational
+2- 2xx: Success
+3- 3xx: Redicrection
+4- 4xx: Client Error (request mis formatted, body is wrong, anything that makes server unable to respond)
+5- 5xx: Server Error (client request is fine, something wrong in the backend makes the server unable to process the request)	
+
+Some example codes and meanings:
+100: Continue (This comes usually with OPTIONS request, saying: I got the options and you're OK to continue sending the request)
+200: OK (You see this e.g. for GET request when it was successful  and the body is retreived, 200 is sent along with the data) 
+201: Created (with POST request, if it succeed you get 200 response)
+304: Not Modified (you see this if a PUT or PATCH request is unsucessful)
+400: Bad Request (something wrong with client request and the server cannot handle it)
+401: Unauthorized (Request format is fine but you don't have access to either that operation or that resource or both)
+404: Not Found (Resource you're requesting doesn't actually exist in the backend)
+500: Internal Server Error (valid request from client but something happend at server side and is not able to be completed)
+
+
+
+====================================
+Create a new flask app (flaskr):
+
+
+1- prepare the required directories:
+	(base) ali@ali-ubuntu:~/fullstackdevelop/FSND$ mkdir flask_setup_example
+	(base) ali@ali-ubuntu:~/fullstackdevelop/FSND$ cd flask_setup_example/
+	(base) ali@ali-ubuntu:~/fullstackdevelop/FSND/flask_setup_example$ ls
+	(base) ali@ali-ubuntu:~/fullstackdevelop/FSND/flask_setup_example$ mkdir flaskr
+	(base) ali@ali-ubuntu:~/fullstackdevelop/FSND/flask_setup_example$ cd flaskr/
+	(base) ali@ali-ubuntu:~/fullstackdevelop/FSND/flask_setup_example/flaskr$ touch __init__.py
+	
+2- Open app folder in vscode and start filling _init__.py
+	from flask import Flask, jsonify
+
+	def create_app(test_config= None):
+	    app = Flask(__name__)  	    
+	    return app
+	   
+3- from command line: 
+	This command tells our app where/what folder to look for our application in (Needs to run only the first time you run the app).
+	(flask) ali@ali-ubuntu:~/fullstackdevelop/FSND/flask_setup_example/flaskr$ export FLASK_APP=flaskr
+	
+	This runs our app in development mode. whatever changes done, the server will automatically restart to accomidate (Needs to run only the first time you run the app).
+	(flask) ali@ali-ubuntu:~/fullstackdevelop/FSND/flask_setup_example/flaskr$ export FLASK_ENV=development
+	
+	run the app:
+	(flask) ali@ali-ubuntu:~/fullstackdevelop/FSND/flask_setup_example/flaskr$ flask run
+	
+	This should give NOT FOUND page because we did not give any end point! So, now we can go ahead and modify __init__.py more and more if we would to display anything!
+	
+	Note: when running the app flaskr, you need to be in the parent folder containing that app. the right way to run the app is:
+	(flask) ali@ali-ubuntu:~/fullstackdevelop/FSND/flask_setup_example$ flask run
+	
+- Note: don't have multiple decorators to the same route. example multiple:
+
+@app.rount('/smiley')
+def smily():
+	return ':)'
+	
+- Anything you want to put in (return) that is not a simple string, you need to jsonify in order to be formatted correctly
+
+
+==================================
+Curl Request Syntax:
+
+In addition to chrome developer tool, Curl is another way to look at what the end point is returning to us. we can utilize Curl in the command line.
+
+Command Elements:
+
+curl -X POST https://www.example.com/tasks/
+
+essential command line keyword: curl
+command line option: -X
+Method: POST
+URL: https://www.example.com/tasks/
+
+options:
+
+-X (--request COMMAND): specify a request method (GET is default), but once -X is mentioned, you need to spcify the method
+-d (--data DATA): curl -d {'name':'Bob'} to send data to backend
+-F (--form CONTENT): curl -X POST -F 'name'='user'https://www.example.com
+-u (--user USER[:[ASSWORD]): ucrl --user bob:secret https://www.example.com => this is less secure but good for testing things
+-H (--header LINE): curl -H 'Content-Type: application/json' https://www.example.com
+
+=======================================
+
+
+Organize API Endpoints:
+------------------------
+There are certain principles to follow that even when the developer did not look at your documents, he/she would know what to expect.
+
+Pricinples including:
+1- Should be intutive: from the end point name you expect what to receive, no surprises!
+2- organize by resource: 
+3- Use nouns in path not verbs: path contains nouns not verbs! verbs indicate some actions that we wanna take on that resource and that is where our methods come in! See Examples below:
+	BAD:
+		https://www.exmaple.com/create-tasks
+		https://www.exmaple.com/send
+	Good:
+		https://www.exmaple.com/tasks
+		https://www.exmaple.com/messages
+		
+
+4- Keep a consistant theme:
+	- plural nouns for collections
+	- use parameters to specify a specific item
+		BAD:
+			https://www.exmaple.com/user/task/
+		Good:
+			https://www.exmaple.com/users/1/tasks/
+			
+5- Don't make endpoints too complex or lengthy:
+	No longer than: collection/item/collection	
+	
+	BAD:
+		https://www.exmaple.com/users/1/tasks/8/notes
+	Good:
+		https://www.exmaple.com/tasks/8/notes
+		https://www.exmaple.com/users/1/tasks
+	
+
+Connecting methods with endpoints:
+-----------------------------------
+
+PUO = Partial Update Of
+
+-----------------------------------------------------------------------------------------------------------------------------------------
+Resource	GET				POST				PATCH				DELETE
+-----------------------------------------------------------------------------------------------------------------------------------------
+/tasks		Get all tasks			Create a new task		partial update of all tasks	dalete all tasks
+-----------------------------------------------------------------------------------------------------------------------------------------
+/tasks/1	Get details of task 1		Error! (item already exists)	PUO task 1			delete task 1
+-----------------------------------------------------------------------------------------------------------------------------------------
+tasks/1/notes	Get all the notes for task 1	Create a new note for task 1	PUO all notes of task 1	delete all notes of task1
+
+
+
+==========================================================
+CORS: Cross-Origin Resource Sharing 
+
+
+This is related to your website requesting sources from other websites. Your origin will not be same as the website you're requesting from (such as Spotify API). Therefore, CORS is something we need to do in order to allow your website to make a request to Spotifiy API which is not sharing the same origin
+
+- CORS:
+	- All about security and something called Same-Origin Policy: This policy says: a web-browser aloows script in one page to access data in another page but only if they have same origin.
+	
+	- Blocks rquests from rogue JavaScript: these are scripts like in ads that would try to manipulate our data bank
+
+	
+CORS triggered under different condtions:
+--------------------------------------------
+when making requests from:
+- different domains
+- different subdomains (example.com and api.example.com)
+- different ports (example.com and example.com:1234)
+- different protocols (http://example.com and https://example.com)
+
+Why do we care?
+- Rogue or malicious scripts
+- ability to complete non-simple requests (requests beoynd some basic headers)
+	- preflight OPTIONS request: a request that asks the server, do I have permission to ask this request (access to resource or/and method)?
+	- no CORS, no request sent
+	If you're sending any requests beyond very simple GET or POST requests, then before your actual request is sent, the browser sends a preflight OPTIONS request to the server. If CORS is not enabled, then the browser will not respond properly and the actual request will not be sent. 
+- It protects you and your users
+
+
+---------------------------------------------------------------------------------------------------------------
+Header					Description
+---------------------------------------------------------------------------------------------------------------
+Access-Control-Allow-Origin		What client domains can access its resources. for any domain use *
+
+Access-Control-Allow-Credentials	if using cookies for authentication
+
+Access-Control-Allow-Methods		List of HTTP allowed methods example: Allow to POST new item but deny modifying existing one
+
+Access-Control-Allow-Headers		List of HTTP request header values that server allows. Useful for custom headers
+
+
+
+FLASK:
+=============
+
+Variable Rules
+----------------
+In order to handle that variability in Flask, you add a <variable_name> within the path argument of the `@app.route` decorator, which is then passed to the function as a keyword argument variable_name. You can also specify the type of the argument by using <converter:variable_name> syntax. 
+	
+	@app.route('/entrees/<int:entree_id>')
+	def retrieve_entree(entree_id):
+    		return 'Entree %d' % entree_id
+    		
+
+HTTP Methods
+-------------
+
+By default, the @app.route decorator answers only get requests. In order to enable more requests types, pass the method parameter to the decorate including a list of string methods. 
+
+	@app.route('/hello', methods=['GET', 'POST'])
+	def greeting():
+	    if request.method == 'POST':
+		return create_greeting()
+	    else:
+		return send_greeting()
+		
+OPTIONS requests are automatically implemented and HEAD is also automatically implemented if GET is present. 
+
+
+
+********************************************************
+A side Notes: Download Udacity Workspace:
+-------------------------------------------
+
+Use the following code to enable you to download the embded Udacity workspace to your local machine:
+
+1- From the workspace itself go to: File|New Launcer	=> select python3 in order to open a python3 notebook kernal
+2- Inside the notebook, paste the following code (preferable to have the imports in a seperate cell)
+	import os
+	import tarfile
+	
+	def recursive_files(dir_name='.', ignore=None):
+	    for dir_name,subdirs,files in os.walk(dir_name):
+		if ignore and os.path.basename(dir_name) in ignore:
+		    continue
+
+		for file_name in files:
+		    if ignore and file_name in ignore:
+		        continue
+
+		    yield os.path.join(dir_name, file_name)
+
+	def make_tar_file(dir_name='.', target_file_name='workspace_archive.tar', ignore=None):
+	    tar = tarfile.open(target_file_name, 'w')
+
+	    for file_name in recursive_files(dir_name, ignore):
+		tar.add(file_name)
+
+	    tar.close()
+
+
+	dir_name = '.'
+	target_file_name = 'workspace_archive.tar'
+	# List of files/directories to ignore
+	ignore = {'.ipynb_checkpoints', '__pycache__', target_file_name}
+
+	make_tar_file(dir_name, target_file_name, ignore)
+	
+3- This will generate a tar file in the workspace. Right click on it and select download.
+4- untar the file in any place and start working!
+******************************************************************
+
+Flask Pagination:
+-------------------
+
+Flask pagination is the act of sending data in chunks as the user page requests .. This is good in order not to flood data at once and create trafic!
+
+Way to do that:
+
+- parameterize the url to have a page reference with equal sign and then number of page!
+URL: www.example.com?page=1
+
+If multiple parameters are to be passed, seperate them with '&'
+URL: www.example.com/entrees?page=1&allergens=pean
+
+How to use that in Flask?
+---------------------------
+
+@app.route('/entrees', methods=['GET'])
+  def get_entrees():
+    page = request.args.get('page', 1, type=int)
+	
+
+So, from request object (request), access argument (.args) object and using get (.get) method, you can get the value of argument page
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

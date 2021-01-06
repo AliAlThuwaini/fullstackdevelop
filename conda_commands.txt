@@ -1,0 +1,22 @@
+Conda Adding/Removing a channel to conda channels:
+==================================================
+
+- List your channels:
+	$ conda config --show channels
+	
+- Remove a channel nameChannelToRemove:
+	$ conda config --remove channels nameChannelToRemove
+	
+- Add a channel requiredChannel --> in my case this channel is conda-forge:
+	$ conda config --add channels requiredChannel
+	Note: it is prefered to append rather than to add. See below how. Reason: Add will make requiredChannel first hit channel. Your anaconda's default channel will get lower priority. Some of your packages will start updating to requiredChannel. However, using append option keeps your default channel high in priority. Packages will be searched on your default before going to requiredChannel.
+	
+- Append conda channel list:
+	$ conda config --append channels requiredChannel
+	
+	
+	
+Create Env from file:
+======================
+
+$ conda create --name fyyur --file requirements.txt

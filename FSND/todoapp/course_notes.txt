@@ -55,6 +55,8 @@ Handling errors in the controller function and prevend accedintal db commit when
 
 DB Migrations:
 ===============
+$ flask db init
+This command is done only once (the first time you will do db migrate in your project). it adds a migrations directory in the root of your project. Add the directory and all of its contents to source control.
 
 $ flask db migrate 	
 Creates a migration script template to fill out
