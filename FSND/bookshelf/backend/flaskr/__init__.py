@@ -1,10 +1,16 @@
-import os
-from flask import Flask, request, abort, jsonify
-from flask_sqlalchemy import SQLAlchemy #, or_
-from flask_cors import CORS
+
 import random
+import os
+from flask import Flask, request, abort, jsonify, Request
+
 
 from models import setup_db, Book
+from flask_sqlalchemy import SQLAlchemy #, or_
+from flask_cors import CORS
+
+
+
+
 
 BOOKS_PER_SHELF = 8
 
@@ -13,6 +19,8 @@ BOOKS_PER_SHELF = 8
 #     If you do not update the endpoints, the lab will not work - of no fault of your API code! 
 #   - Make sure for each route that you're thinking through when to abort and with which kind of error 
 #   - If you change any of the response body keys, make sure you update the frontend to correspond. 
+
+
 
 def create_app(test_config=None):
   # create and configure the app
@@ -27,12 +35,40 @@ def create_app(test_config=None):
     response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
     return response
 
+
+
+  @app.route('/')
+  def root_message():
+    return jsonify({
+      'message': "Welcome, you're in the root page"
+    })
+
+
+
+
   # @TODO: Write a route that retrivies all books, paginated. 
   #         You can use the constant above to paginate by eight books.
   #         If you decide to change the number of books per page,
   #         update the frontend to handle additional books in the styling and pagination
   #         Response body keys: 'success', 'books' and 'total_books'
   # TEST: When completed, the webpage will display books including title, author, and rating shown as stars
+
+  @app.route('/books')
+  def get_books():
+
+    book_shelf = request.args.get('page', 1, type=int)
+    start_index = (book_shelf - 1) * 8
+    end_index = start_index + 8
+
+    books = Book.query.all()
+    print('type: ', type(books), '/n/n/n')
+    formatted_books = [book.format() for book in books]
+    print('type2: ', type(books), '/n/n/n')
+    return jsonify({
+      'success': True,
+      'books': formatted_books[start_index : end_index],
+      'total_books': len(formatted_books)
+    })
 
 
   

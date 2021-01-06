@@ -541,7 +541,7 @@ options:
 -X (--request COMMAND): specify a request method (GET is default), but once -X is mentioned, you need to spcify the method
 -d (--data DATA): curl -d {'name':'Bob'} to send data to backend
 -F (--form CONTENT): curl -X POST -F 'name'='user'https://www.example.com
--u (--user USER[:[ASSWORD]): ucrl --user bob:secret https://www.example.com => this is less secure but good for testing things
+-u (--user USER[:[ASSWORD]): curl --user bob:secret https://www.example.com => this is less secure but good for testing things
 -H (--header LINE): curl -H 'Content-Type: application/json' https://www.example.com
 
 =======================================
@@ -728,9 +728,12 @@ How to use that in Flask?
 @app.route('/entrees', methods=['GET'])
   def get_entrees():
     page = request.args.get('page', 1, type=int)
+    #start and end index of data to be retrived:
+    start = (page-1) * 10	# start data index. if I'm in page 0, this will be 0 
+    end = start + 10		# end data index
 	
 
-So, from request object (request), access argument (.args) object and using get (.get) method, you can get the value of argument page
+So, from request object (request), access argument (.args) object and using get (.get) method, you can get the value of the key 'page'. If key 'page' doesn't exist, default to 1 and emphasize that the type is always integer!
 
 
 
