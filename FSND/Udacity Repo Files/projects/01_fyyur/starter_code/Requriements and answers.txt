@@ -1,0 +1,43 @@
+
+Legend:
+===========
+R= Required
+A= Answer
+
+
+R 1: Models
+=============
+- Add missing filds to the available tables (Venue, Artist)
+
+A: 
+Venue: done
+Artist: there is none I guess
+
+
+
+- Create Model Show
+A:
+Done
+
+
+- Implement the relatioships between the models
+A: Done
+
+
+- Ali: To create them, let's implement db migrate instead of db.create_all()
+A:
+Done
+
+
+- Insert dummy data into database:
+A:
+Done
+
+
+
+
+
+R 2: Controllers
+==================
+
+
