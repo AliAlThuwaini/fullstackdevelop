@@ -725,17 +725,234 @@ URL: www.example.com/entrees?page=1&allergens=pean
 How to use that in Flask?
 ---------------------------
 
-@app.route('/entrees', methods=['GET'])
+@app.route('/plants', methods=['GET'])
   def get_entrees():
     page = request.args.get('page', 1, type=int)
     #start and end index of data to be retrived:
     start = (page-1) * 10	# start data index. if I'm in page 0, this will be 0 
     end = start + 10		# end data index
+    plants = Plant.query.all()
+    formatted_plants = [plant.format() for plant in plants]
+    
+    return jsonify({
+    		'sucess':True,
+    		'plants': formatted_plants[start:end],
+    		'total plants': len(formatted_plants)
+    	})
 	
 
 So, from request object (request), access argument (.args) object and using get (.get) method, you can get the value of the key 'page'. If key 'page' doesn't exist, default to 1 and emphasize that the type is always integer!
 
 
+==============================================================================
+
+Using PATCH method: In the below example to update book rating
+
+END POINT CODE:
+----------------
+  @app.route('/books/<int:book_id>', methods=['PATCH'])
+  def update_book(book_id):
+    body = request.get_json()
+
+    try:
+      book = Book.query.filter_by(id==book_id).one_or_none()
+      if book is None:
+        abort(404)
+
+      if 'rating' in body:
+        book.rating = int(body.get('rating'))
+
+      book.update()
+
+      return ({
+        'success': True,
+        'id':book.id
+      })
+
+    except:
+      abort(400)
+
+
+You can write the following command on terminal to change rating of book with id=8:
+
+$ curl http://localhost:5000/books/8 -X PATCH -H "Content-Type: application/json" -d '{"rating":"1"}'
+
+-H: header
+-d: data
+
+If the command succeed, you should receive {'id': 8, 'success': True}
+------------------------------------------------------------------------------
+
+Using DELETE method: in the below example to delete a book:
+
+END POINT CODE:
+---------------
+
+  @app.route('/books/<int:book_id>', methods=['DELETE'])
+  def delete_book(book_id):
+
+    try:
+      book = Book.query.filter(Book.id==book_id).one_or_none()
+
+      if book is None:
+        abort(404)
+
+      book.delete()
+      selection = Book.query.order_by(Book.id).all()
+      current_books = paginate_books(request, selection)
+
+      return jsonify({
+        'success': True,
+        'deleted': book_id,
+        'books': current_books,
+        'total_books': len(selection)
+      })
+
+    except:
+      abort(422)
+
+
+You can write the following command on terminal to delete a book with id=8:
+
+$ curl -X DELETE http://localhost:5000/books/8  
+
+If the command succeed, you should receive:
+
+{
+        'success': True,
+        'deleted': 8,
+        'total_books': 15
+      }
+      
+      
+      
+-------------------------------------------------------------     
+Using POST method: in the below example to create a new book:
+
+END POINT CODE: 
+
+
+  @app.route('/books/', methods= ['POST'])
+  def create_book():
+    body= request.get_json()
+
+    new_title = body.get('title', None)
+    new_author = body.get('author', None)
+    new_rating = body.get('rating', None)
+
+    try:
+      book = Book(title=new_title, author=new_author, rating=new_rating)
+      book.insert()
+
+      selection = Book.query.order_by(Book.id).all()
+      current_books = paginate_books(request, selection)
+
+      return jsonify({
+        'success': True,
+        'created': book.id,
+        'books': current_books,
+        'total_books': len(selection)
+      })
+
+    except:
+      abort(422)
+
+
+You can write the following command on terminal to create a new book:
+
+$ curl -X POST -H "Content-Type: application/json" -d '{"title": "Neverwhere", "author": "Neil Gaiman", "rating": "5"}' http://localhost:5000/books
+
+If the command succeed, you should receive something similar to this (I just removed the books list from the returned output):
+
+{
+  "created": 23, 
+  "success": true, 
+  "total_books": 16
+}
+
+-------------------------------------------------------------------
+
+Error handler decorator:
+
+Purpose of defining an error handler is: originally the error returned as HTML code. our APIs return josnify response and hence we need to be consistnet and always return jsonify response in case of success or in case of failure (error)
+
+the error handler decorator with josnify format has to have the following sections:
+   - an argument which is the error code that it will handle
+   - a message to be returned
+   - the error code itself is to be returned.
+   
+Below are 5 error handlers for 5 different errors:
+-----------------------
+
+  @app.errorhandler(404)
+  def not_found(error): #the argument 'error' is not mandatory here as we're not using it!
+    return jsonify({
+	"success": False, 
+	"error": 404,
+	"message": "Resource Not found"
+	}), 404
+
+  @app.errorhandler(422)
+  def not_processable(error):
+    return jsonify({
+        "success": False, 
+        "error": 422,
+        "message": "Resource is unprocessable"
+        }), 422
+
+  @app.errorhandler(400)
+  def not_processable(error):
+    return jsonify({
+        "success": False, 
+        "error": 400,
+        "message": "bad request"
+        }), 400
+
+  @app.errorhandler(405)
+  def not_processable(error):
+    return jsonify({
+        "success": False, 
+        "error": 405,
+        "message": "method not allowed"
+        }), 405
+
+
+Now, let's do some tests:
+
+- requesting a page that is not in the system and let's see the response:
+
+$ curl http://localhost:5000/books?page=300
+
+and here is the response: it is indeed a consitent jsonify response (by consistent I mean just like the jsonify successful message, this is a jsonify error message)
+
+{
+  "error": 404, 
+  "message": "Resource Not found", 
+  "success": false
+}
+
+
+- Try to POST a spcific book by specifying a book id! This should give an error because POST is creating a book and hence it should be on the level of the collection books. If we specify a book by id, it cannot create it.
+
+
+$ curl -X POST -H "Content-Type: application/json" -d '{"title": "Neverwhere", "author": "Neil Gaiman", "rating": "5"}' http://localhost:5000/books/100000
+
+and here is the response:
+
+{
+  "error": 405, 
+  "message": "method not allowed", 
+  "success": false
+}
+
+---------------------------------------------------------
+
+Review the folloing resource to read and know more about .gitignore file and what to ignore in your project:
+
+https://zellwk.com/blog/gitignore/ 
+
+
+=========================================================================================
 
 
 
